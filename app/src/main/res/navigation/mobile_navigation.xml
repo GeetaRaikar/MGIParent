@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/mobile_navigation"
+    app:startDestination="@+id/nav_home">
+    <fragment
+        android:id="@+id/nav_home"
+        android:name="com.padmajeet.mgi.techforedu.parent.FragmentHome"
+        android:label="@string/home"
+        tools:layout="@layout/fragment_home" />
+
+    <fragment
+        android:id="@+id/nav_aboutus"
+        android:name="com.padmajeet.mgi.techforedu.parent.FragmentAboutUs"
+        android:label="@string/aboutUs"
+        tools:layout="@layout/fragment_about_us" />
+
+    <fragment
+        android:id="@+id/nav_appinfo"
+        android:name="com.padmajeet.mgi.techforedu.parent.FragmentAppInfo"
+        android:label="@string/appinfo"
+        tools:layout="@layout/fragment_app_info" />
+
+    <fragment
+        android:id="@+id/nav_support"
+        android:name="com.padmajeet.mgi.techforedu.parent.FragmentSupport"
+        android:label="@string/support"
+        tools:layout="@layout/fragment_support" />
+    <fragment
+        android:id="@+id/nav_profile"
+        android:name="com.padmajeet.mgi.techforedu.parent.FragmentProfile"
+        android:label="@string/profile"
+        tools:layout="@layout/fragment_profile" />
+</navigation>
