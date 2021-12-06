@@ -22,19 +22,19 @@ import cn.pedant.SweetAlert.SweetAlertDialog;
 public class ActivitySplashScreen extends AppCompatActivity {
     private FirebaseFirestore db = FirebaseFirestore.getInstance();
     private Gson gson = Utility.getGson();
-    SweetAlertDialog pDialog;
-    SessionManager sessionManager;
-    DocumentReference parentDocRef;
-    Parent loggedInUser;
-    String loggedInUserId;
-    String parentId;
+    private SweetAlertDialog pDialog;
+    private SessionManager sessionManager;
+    private DocumentReference parentDocRef;
+    private Parent loggedInUser;
+    private String loggedInUserId;
+    private String parentId;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_splash_screen);
         sessionManager = new SessionManager(ActivitySplashScreen.this);
         parentId = sessionManager.getString("loggedInUserId");
-
+        pDialog = Utility.createSweetAlertDialog(ActivitySplashScreen.this);
         new Handler().postDelayed(new Runnable() {
 
             @Override
@@ -53,20 +53,20 @@ public class ActivitySplashScreen extends AppCompatActivity {
     }
 
     private void validateParent(String documentId) {
+        if (pDialog != null && !pDialog.isShowing()) {
+            pDialog.show();
+        }
         parentDocRef = db.document("Parent/" + documentId);
         parentDocRef.get()
                 .addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
                     @Override
                     public void onSuccess(DocumentSnapshot documentSnapshot) {
-                        System.out.println("Data -key -" + documentSnapshot.getId() + " value -" + documentSnapshot.getData());
+                        if(pDialog.isShowing() && pDialog != null){
+                            pDialog.dismiss();
+                        }
                         loggedInUserId = documentSnapshot.getId();
                         loggedInUser = documentSnapshot.toObject(Parent.class);
-                        System.out.println("Data -key -" + documentSnapshot.getId() + " value -" + loggedInUser);
-                        System.out.println("loggedInUser -" + loggedInUser.getFirstName());
                         SessionManager sessionManager = new SessionManager(ActivitySplashScreen.this);
-                        String sessionLoginStr = sessionManager.getString("loggedInUser");
-                        Parent sessionUser = gson.fromJson(sessionLoginStr, Parent.class);
-
                         if (loggedInUser != null && loggedInUser.getStatus().equals("A")) {
                             sessionManager.putString("loggedInUser", gson.toJson(loggedInUser));
                             sessionManager.putString("loggedInUserId", loggedInUserId);
@@ -81,13 +81,14 @@ public class ActivitySplashScreen extends AppCompatActivity {
                             startActivity(i);
                             finish();
                         }
-
                     }
                 })
-
                 .addOnFailureListener(new OnFailureListener() {
                     @Override
                     public void onFailure(@NonNull Exception e) {
+                        if(pDialog.isShowing() && pDialog != null){
+                            pDialog.dismiss();
+                        }
                         Intent i = new Intent(ActivitySplashScreen.this, ActivityLogin.class);
                         overridePendingTransition(android.R.anim.slide_in_left, android.R.anim.slide_out_right);
                         startActivity(i);

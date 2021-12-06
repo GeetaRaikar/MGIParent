@@ -11,7 +11,6 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
-import com.firebase.client.Firebase;
 import com.google.android.gms.ads.MobileAds;
 import com.google.android.gms.ads.initialization.InitializationStatus;
 import com.google.android.gms.ads.initialization.OnInitializationCompleteListener;
@@ -40,36 +39,30 @@ import cn.pedant.SweetAlert.SweetAlertDialog;
 
 public class ActivityLogin extends AppCompatActivity {
     private FirebaseAuth mAuth;
-    String mobileNumber, password;
+    private String mobileNumber, password;
     private EditText etMobileNumber, etPassword;
     private Button btnSubmit, btnVerify, btnLogin;
-    LinearLayout llOTP, llLogin;
-    SweetAlertDialog pDialog;
+    private LinearLayout llOTP, llLogin;
+    private SweetAlertDialog pDialog;
     private TextView tvFor;
-    Parent loggedInUser;
-    String loggedInUserId;
+    private Parent loggedInUser;
+    private String loggedInUserId;
     private Gson gson = Utility.getGson();
     private FirebaseFirestore db = FirebaseFirestore.getInstance();
-    CollectionReference parentCollectionRef = db.collection("Parent");
-    CollectionReference instituteCollectionRef = db.collection("Institute");
-    CollectionReference academicYearCollectionRef = db.collection("AcademicYear");
-    CollectionReference studentCollectionRef = db.collection("Student");
-    DocumentReference studentDocRef;
-    DocumentReference instituteDocRef;
-    Student student;
-    Institute institute;
-    private Student loggedInUserStudent;
-    private String loggedInUserStudentId;
-    private Parent parent;
-    DocumentReference parentDocRef;
-    private Firebase firebase;
+    private CollectionReference parentCollectionRef = db.collection("Parent");
+    private CollectionReference instituteCollectionRef = db.collection("Institute");
+    private CollectionReference academicYearCollectionRef = db.collection("AcademicYear");
+    private CollectionReference studentCollectionRef = db.collection("Student");
+    private DocumentReference studentDocRef;
+    private DocumentReference instituteDocRef;
+    private Student student;
+    private Institute institute;
     private String academicYearId;
     private AcademicYear academicYear;
-    String parentId;
-    SessionManager sessionManager;
-    TextView tvName;
-    ImageView appIcon;
-    // private static final String TAG = "PreSchool";
+    private String parentId;
+    private SessionManager sessionManager;
+    private TextView tvName;
+    private ImageView appIcon;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -84,24 +77,20 @@ public class ActivityLogin extends AppCompatActivity {
         sessionManager = new SessionManager(ActivityLogin.this);
         pDialog = Utility.createSweetAlertDialog(ActivityLogin.this);
 
-        parentId = sessionManager.getString("loggedInUserId");
-
         tvName = findViewById(R.id.tvName);
         appIcon = findViewById(R.id.appIcon);
         etMobileNumber = findViewById(R.id.etMobileNumber);
-
         btnSubmit = findViewById(R.id.btnSubmit);
         btnLogin = findViewById(R.id.btnLogin);
-
         llLogin = findViewById(R.id.llLogin);
         etPassword = findViewById(R.id.etPassword);
-
         tvFor = findViewById(R.id.tvFor);
+
+        parentId = sessionManager.getString("loggedInUserId");
 
         btnSubmit.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                //System.out.println("db "+db.getApp());
                 mobileNumber = etMobileNumber.getText().toString().trim();
                 if (Utility.isValidPhone(mobileNumber)) {
                     getParentObject();
@@ -123,7 +112,6 @@ public class ActivityLogin extends AppCompatActivity {
                     sessionManager.putString("loggedInUser", loggedInAdminStr);
                     sessionManager.putString("loggedInUserId", loggedInUserId);
                     sessionManager.putString("instituteId", loggedInUser.getInstituteId());
-                    //sessionManager.putString("loggedInUserForWorker",gson.toJson(loggedInUser));
                     Intent intent = new Intent(ActivityLogin.this, ActivityHome.class);
                     overridePendingTransition(android.R.anim.slide_in_left, android.R.anim.slide_out_right);
                     startActivity(intent);
@@ -152,7 +140,6 @@ public class ActivityLogin extends AppCompatActivity {
         if (pDialog != null && !pDialog.isShowing()) {
             pDialog.show();
         }
-        // [START get_multiple]
 
         parentCollectionRef
                 .whereEqualTo("mobileNumber", mobileNumber)
@@ -167,7 +154,7 @@ public class ActivityLogin extends AppCompatActivity {
                         if (task.isSuccessful()) {
                             if (task.getResult().isEmpty()) {
                                 System.out.println("task.getResult().isEmpty()  "+task.getResult().isEmpty());
-                                etMobileNumber.setError(getString(R.string.errInvalidMobNum));
+                                etMobileNumber.setError(getString(R.string.errRegisterMobNum));
                                 etMobileNumber.requestFocus();
                                 return;
                             }
@@ -178,7 +165,7 @@ public class ActivityLogin extends AppCompatActivity {
                             }
                             if (loggedInUser == null) {
                                 System.out.println("loggedInUser  "+loggedInUser.getFirstName());
-                                etMobileNumber.setError(getString(R.string.errInvalidMobNum));
+                                etMobileNumber.setError(getString(R.string.errRegisterMobNum));
                                 etMobileNumber.requestFocus();
                                 return;
                             } else {
@@ -187,7 +174,6 @@ public class ActivityLogin extends AppCompatActivity {
                                     sessionManager.putString("loggedInUser", gson.toJson(loggedInUser));
                                     sessionManager.putString("loggedInUserId", loggedInUserId);
                                     sessionManager.putString("instituteId", loggedInUser.getInstituteId());
-                                    //sessionManager.putString("loggedInUserForWorker", gson.toJson(loggedInUser));
                                     Intent intent = new Intent(ActivityLogin.this, ActivityForgotPassword.class);
                                     overridePendingTransition(android.R.anim.slide_in_left, android.R.anim.slide_out_right);
                                     startActivity(intent);
@@ -197,7 +183,6 @@ public class ActivityLogin extends AppCompatActivity {
                                     etMobileNumber.requestFocus();
                                     return;
                                 } else {
-                                    //Toast.makeText(getApplicationContext(), "Please login", Toast.LENGTH_SHORT).show();
                                     btnSubmit.setVisibility(View.GONE);
                                     llLogin.setVisibility(View.VISIBLE);
                                 }

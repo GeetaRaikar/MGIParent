@@ -8,7 +8,7 @@
     android:focusable="true"
     android:orientation="vertical"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    tools:context=".FragmentDaywiseAttendance">
+    tools:context=".FragmentDayWiseAttendance">
 
     <ListView
         android:id="@+id/lvDayWiseAttendance"

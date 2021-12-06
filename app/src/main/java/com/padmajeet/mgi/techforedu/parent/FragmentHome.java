@@ -24,7 +24,6 @@ import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.gson.Gson;
-import com.padmajeet.mgi.techforedu.parent.model.AcademicYear;
 import com.padmajeet.mgi.techforedu.parent.model.Batch;
 import com.padmajeet.mgi.techforedu.parent.model.Parent;
 import com.padmajeet.mgi.techforedu.parent.model.Section;
@@ -43,26 +42,20 @@ import androidx.fragment.app.FragmentTransaction;
  * A simple {@link Fragment} subclass.
  */
 public class FragmentHome extends Fragment {
-    TextView tvParentName,tvStudentName,tvClass;
-    ImageView ivProfilePic;
-
-    FirebaseFirestore db= FirebaseFirestore.getInstance();
-    CollectionReference studentCollectionRef=db.collection("Student");
-    CollectionReference parentCollectionRef=db.collection("Parent");
-    CollectionReference batchCollectionRef=db.collection("Batch");
-    CollectionReference sectionCollectionRef=db.collection("Section");
-    DocumentReference sectionDocRef;
-    DocumentReference batchDocRef;
-    Batch batch;
-    Section section;
-    Gson gson;
-    Student loggedInUserStudent;
-    String LoggedInUserStudentId;
-    AcademicYear academicYear;
-    String academicYearId;
-    String className="";
-    Parent loggedInUser;
-    GridLayout gridLayout;
+    private TextView tvParentName,tvStudentName,tvClass;
+    private ImageView ivProfilePic;
+    private FirebaseFirestore db= FirebaseFirestore.getInstance();
+    private CollectionReference batchCollectionRef=db.collection("Batch");
+    private CollectionReference sectionCollectionRef=db.collection("Section");
+    private DocumentReference sectionDocRef;
+    private DocumentReference batchDocRef;
+    private Batch batch;
+    private Section section;
+    private Gson gson;
+    private Student loggedInUserStudent;
+    private String className="";
+    private Parent loggedInUser;
+    private GridLayout gridLayout;
     private PublisherAdView mPublisherAdView;
 
 
@@ -75,11 +68,6 @@ public class FragmentHome extends Fragment {
         loggedInUser = gson.fromJson(parentJson, Parent.class);
         String studentJson = sessionManager.getString("loggedInUserStudent");
         loggedInUserStudent = gson.fromJson(studentJson, Student.class);
-        LoggedInUserStudentId= sessionManager.getString("loggedInUserStudentId");
-        String selectedAcademicYearJson = sessionManager.getString("AcademicYear");
-        academicYearId = sessionManager.getString("AcademicYearId");
-        academicYear =gson.fromJson(selectedAcademicYearJson, AcademicYear.class);
-
     }
 
     public FragmentHome() {

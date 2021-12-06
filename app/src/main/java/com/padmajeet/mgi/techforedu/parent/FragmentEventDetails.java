@@ -29,7 +29,6 @@ import com.google.gson.Gson;
 import com.padmajeet.mgi.techforedu.parent.model.Batch;
 import com.padmajeet.mgi.techforedu.parent.model.Event;
 import com.padmajeet.mgi.techforedu.parent.model.Parent;
-import com.padmajeet.mgi.techforedu.parent.model.Student;
 import com.padmajeet.mgi.techforedu.parent.util.SessionManager;
 import com.padmajeet.mgi.techforedu.parent.util.Utility;
 
@@ -50,22 +49,22 @@ import static android.os.Environment.DIRECTORY_DOWNLOADS;
 public class FragmentEventDetails extends Fragment {
 
     private TextView tvEvent,tvDate,tvDesc,tvCreatorType,tvClass,tvDressCode,tvAttachment,tvLabelAttachment;
-    Event selectedEvent;
-    FirebaseFirestore db= FirebaseFirestore.getInstance();
-    DownloadManager downloadManager;
-    RadioGroup rgResponse;
-    RadioButton rbMayBe,rbYes,rbNo;
-    Button btnSaveResponse,btnUpdateResponse;
-    LinearLayout llEventResponse;
-    String response="";
-    CollectionReference eventCollectionRef=db.collection("Event");
-    CollectionReference batchCollectionRef=db.collection("Batch");
-    DocumentReference batchDocRef;
-    HashMap<String,String> responseMap=new HashMap<String,String>();
-    SessionManager sessionManager;
-    Parent loggedInUser;
-    String url,fileName,fileName1;
-    String[] fileName2;
+    private Event selectedEvent;
+    private FirebaseFirestore db= FirebaseFirestore.getInstance();
+    private DownloadManager downloadManager;
+    private RadioGroup rgResponse;
+    private RadioButton rbMayBe,rbYes,rbNo;
+    private Button btnSaveResponse,btnUpdateResponse;
+    private LinearLayout llEventResponse;
+    private String response="";
+    private CollectionReference eventCollectionRef=db.collection("Event");
+    private CollectionReference batchCollectionRef=db.collection("Batch");
+    private DocumentReference batchDocRef;
+    private HashMap<String,String> responseMap=new HashMap<String,String>();
+    private SessionManager sessionManager;
+    private Parent loggedInUser;
+    private String url,fileName,fileName1;
+    private String[] fileName2;
 
     public FragmentEventDetails() {
         // Required empty public constructor
@@ -282,27 +281,6 @@ public class FragmentEventDetails extends Fragment {
     //TODO
     private void openFile(){
         Toast.makeText(getContext(),"Download Complete",Toast.LENGTH_SHORT).show();
-       /* Intent install = new Intent(Intent.ACTION_VIEW);
-        String filePath = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-        +"/"+fileName2[1];
-        System.out.println("File Path - "+filePath);
-        File file = new File(filePath);
-        MimeTypeMap map = MimeTypeMap.getSingleton();
-        String ext = MimeTypeMap.getFileExtensionFromUrl(file.getName());
-        String type = map.getMimeTypeFromExtension(ext);
-        System.out.println("Type - "+type);
-
-        */
-        //if (type == null) {
-        //type = "*/*";
-        //}
-        /*
-        Intent intent = new Intent(Intent.ACTION_VIEW);
-        Uri data = Uri.fromFile(file);
-        System.out.println("data - "+data);
-        intent.setDataAndType(data, type);
-        startActivity(intent);
-        */
     }
 
     @Override

@@ -44,8 +44,8 @@
      private Student loggedInUserStudent;
      private LinearLayout llNoList;
      private List<Calendar> calendarList = new ArrayList<>();
-     Bundle bundle = new Bundle();
-     String academicYearId;
+     private Bundle bundle = new Bundle();
+     private String academicYearId;
      private FirebaseFirestore db = FirebaseFirestore.getInstance();
      private CollectionReference calendarCollectionRef = db.collection("Calendar");
      private Calendar calendar;
@@ -53,8 +53,9 @@
      private RecyclerView.Adapter calendarAdapter;
      private RecyclerView.LayoutManager layoutManager;
      private String instituteId;
-     int []circles = {R.drawable.circle_blue_filled,R.drawable.circle_brown_filled,R.drawable.circle_green_filled,R.drawable.circle_pink_filled,R.drawable.circle_orange_filled};
+     private int []circles = {R.drawable.circle_blue_filled,R.drawable.circle_brown_filled,R.drawable.circle_green_filled,R.drawable.circle_pink_filled,R.drawable.circle_orange_filled};
      private ListenerRegistration calendarListener;
+     private SweetAlertDialog pDialog;
 
      @Override
      public void onCreate(Bundle savedInstanceState) {
@@ -65,6 +66,7 @@
          loggedInUserStudent = gson.fromJson(studentJson, Student.class);
          academicYearId = sessionManager.getString("academicYearId");
          instituteId=sessionManager.getString("instituteId");
+         pDialog = Utility.createSweetAlertDialog(getContext());
          System.out.println("Student -"+loggedInUserStudent.getFirstName());
          System.out.println("academicYearId -"+academicYearId);
          System.out.println("instituteId -"+instituteId);
@@ -89,46 +91,47 @@
      }
 
      private void getCalendarOfBatch() {
-
-         final SweetAlertDialog pDialog;
-         pDialog = Utility.createSweetAlertDialog(getContext());
-         pDialog.show();
-         calendarListener = calendarCollectionRef
-                 .whereEqualTo("academicYearId",academicYearId)
-                 .whereEqualTo("batchId",loggedInUserStudent.getCurrentBatchId())
-                 .orderBy("fromDate", Query.Direction.ASCENDING)
-                 .orderBy("toDate", Query.Direction.ASCENDING)
-                 .addSnapshotListener(new EventListener<QuerySnapshot>() {
-                     @Override
-                     public void onEvent(@Nullable QuerySnapshot queryDocumentSnapshots, @Nullable FirebaseFirestoreException e) {
-                         if (e != null) {
-                             return;
+         if(academicYearId != null && loggedInUserStudent != null) {
+             if (pDialog != null && !pDialog.isShowing()) {
+                 pDialog.show();
+             }
+             calendarListener = calendarCollectionRef
+                     .whereEqualTo("academicYearId", academicYearId)
+                     .whereEqualTo("batchId", loggedInUserStudent.getCurrentBatchId())
+                     .orderBy("fromDate", Query.Direction.ASCENDING)
+                     .orderBy("toDate", Query.Direction.ASCENDING)
+                     .addSnapshotListener(new EventListener<QuerySnapshot>() {
+                         @Override
+                         public void onEvent(@Nullable QuerySnapshot queryDocumentSnapshots, @Nullable FirebaseFirestoreException e) {
+                             if (e != null) {
+                                 return;
+                             }
+                             if (calendarList.size() != 0) {
+                                 calendarList.clear();
+                             }
+                             if (pDialog != null && pDialog.isShowing()) {
+                                 pDialog.dismiss();
+                             }
+                             for (DocumentSnapshot document : queryDocumentSnapshots.getDocuments()) {
+                                 calendar = document.toObject(Calendar.class);
+                                 calendar.setId(document.getId());
+                                 calendarList.add(calendar);
+                             }
+                             if (calendarList.size() != 0) {
+                                 calendarAdapter = new CalendarAdapter(calendarList);
+                                 rvCalendar.setAdapter(calendarAdapter);
+                                 calendarAdapter.notifyDataSetChanged();
+                                 rvCalendar.setVisibility(View.VISIBLE);
+                                 llNoList.setVisibility(View.GONE);
+                             } else {
+                                 rvCalendar.setVisibility(View.GONE);
+                                 llNoList.setVisibility(View.VISIBLE);
+                             }
                          }
-                         if(calendarList.size()!=0){
-                             calendarList.clear();
-                         }
-                         if (pDialog != null) {
-                             pDialog.dismiss();
-                         }
-                         for (DocumentSnapshot document:queryDocumentSnapshots.getDocuments()) {
-                             calendar = document.toObject(Calendar.class);
-                             calendar.setId(document.getId());
-                             calendarList.add(calendar);
-                         }
-                         System.out.println("Calendar  -" + calendarList.size());
-                         if (calendarList.size() != 0) {
-                             calendarAdapter = new CalendarAdapter(calendarList);
-                             rvCalendar.setAdapter(calendarAdapter);
-                             calendarAdapter.notifyDataSetChanged();
-                             rvCalendar.setVisibility(View.VISIBLE);
-                             llNoList.setVisibility(View.GONE);
-                         } else {
-                             rvCalendar.setVisibility(View.GONE);
-                             llNoList.setVisibility(View.VISIBLE);
-                         }
-                     }
-                 });
-         // [END get_all_users]
+                     });
+         }else{
+             //loggedInUserStudent, academicYearId == null
+         }
 
      }
 

@@ -11,7 +11,8 @@
     <string name="submit">Submit</string>
     <string name="mobileNumber">Registered Mobile Number</string>
     <string name="password">Password</string>
-    <string name="errInvalidMobNum">Mobile Number is not registered</string>
+    <string name="errInvalidMobNum">Invalid Mobile Number</string>
+    <string name="errRegisterMobNum">Mobile Number is not registered</string>
     <string name="errInvalidPassword">Invalid Password</string>
     <string name="emailId">Email Id</string>
     <string name="support">Support</string>

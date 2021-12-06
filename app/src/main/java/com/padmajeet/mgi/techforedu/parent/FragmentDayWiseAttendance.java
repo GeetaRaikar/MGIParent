@@ -7,7 +7,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -34,22 +33,21 @@ import androidx.fragment.app.Fragment;
 /**
  * A simple {@link Fragment} subclass.
  */
-public class FragmentDaywiseAttendance extends Fragment {
+public class FragmentDayWiseAttendance extends Fragment {
 
     private ListView lvDayWiseAttendance;
     private LinearLayout llNoList;
-    private ImageView ivNoData;
-    private TextView tvNoData;
     private Gson gson;
     private Parent loggedInUser;
     private String academicYearId, instituteId;
     private List<Attendance> attendanceList;
     private List<Subject> subjectList;
     private HashMap<Integer,List<Attendance>> attendanceHashMap = new HashMap<>();
-    private List<List<Attendance>> daywiseAttendanceList = new ArrayList<>();
+    private List<List<Attendance>> dayWiseAttendanceList = new ArrayList<>();
     private List<Integer> countList = new ArrayList<>();
     private SessionManager sessionManager;
-    public FragmentDaywiseAttendance() {
+
+    public FragmentDayWiseAttendance() {
         // Required empty public constructor
     }
 
@@ -62,7 +60,7 @@ public class FragmentDaywiseAttendance extends Fragment {
         loggedInUser=gson.fromJson(userJson, Parent.class);
         academicYearId= sessionManager.getString("academicYearId");
         instituteId=loggedInUser.getInstituteId();
-        System.out.println("FragmentDaywiseAttendance");
+        System.out.println("FragmentDayWiseAttendance");
         String attendanceListJson = sessionManager.getString("attendanceList");
         System.out.println("attendanceListJson - "+attendanceListJson);
         attendanceList = gson.fromJson(attendanceListJson,new TypeToken<List<Attendance>>(){}.getType());
@@ -84,11 +82,8 @@ public class FragmentDaywiseAttendance extends Fragment {
         //((ActivityHome)getActivity()).getSupportActionBar().setTitle(getString(R.string.daywiseAttendance));
         lvDayWiseAttendance = view.findViewById(R.id.lvDayWiseAttendance);
         llNoList = view.findViewById(R.id.llNoList);
-        tvNoData = view.findViewById(R.id.tvNoData);
-        ivNoData = view.findViewById(R.id.ivNoData);
-        //getAttendanceOfStudent();
 
-        if(attendanceList!=null){
+        if(attendanceList!=null && attendanceList.size()>0){
             SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
             int k =0;
             for(int i=0;i<attendanceList.size();i++){
@@ -112,14 +107,13 @@ public class FragmentDaywiseAttendance extends Fragment {
                     String keyDate = sdf.format(attendanceDate);
 
                     attendanceHashMap.put(k,tempAttendanceList);
-                    daywiseAttendanceList.add(tempAttendanceList);
+                    dayWiseAttendanceList.add(tempAttendanceList);
                     countList.add(k);
                     k++;
                 }
             }
             System.out.println("HashMap size - "+attendanceHashMap.size());
-            if(daywiseAttendanceList.size()>0){
-
+            if(dayWiseAttendanceList.size()>0){
                 AttendanceAdaptor attendanceAdaptor = new AttendanceAdaptor(getContext());
                 lvDayWiseAttendance.setAdapter(attendanceAdaptor);
             }
@@ -129,80 +123,7 @@ public class FragmentDaywiseAttendance extends Fragment {
             llNoList.setVisibility(View.VISIBLE);
         }
     }
-/*
-    private void getAttendanceOfStudent(){
-        new AsyncTask<Void,Void,String>(){
 
-            SweetAlertDialog pDialog;
-            @Override
-            protected void onPreExecute() {
-                pDialog = Utility.createSweetAlertDialog(getContext());
-                if(pDialog!=null){
-                    pDialog.show();
-                }
-            }
-
-            @Override
-            protected String doInBackground(Void... voids) {
-                String url = getString(R.string.baseUrl)+"AttendanceService/getAttendancesOfStudent/"+loggedInUser.getStudentId().getId()+"/"+loggedInUser.getStudentId().getCurrentBatchId().getId()+"/"+currentAcademicYear.getId();
-                return new HttpManager().getData(url);
-            }
-
-            @Override
-            protected void onPostExecute(String result) {
-                //super.onPostExecute(s);
-                if(pDialog!=null){
-                    pDialog.dismiss();
-                }
-                System.out.println("Result - "+result);
-                if(!TextUtils.isEmpty(result)){
-                    SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
-                    attendanceList = gson.fromJson(result,new TypeToken<List<Attendance>>(){}.getType());
-                    sessionManager.putString("attendanceList",result);
-                    System.out.println("Main List size - "+attendanceList.size());
-                    int k =0;
-                    for(int i=0;i<attendanceList.size();i++){
-                        Date attendanceDate = attendanceList.get(i).getDate();
-                        if(attendanceDate!=null){
-                            List<Attendance> tempAttendanceList = new ArrayList<>();
-                            tempAttendanceList.add(attendanceList.get(i));
-                            System.out.println("First Date - "+attendanceDate);
-                            for(int j=i+1;j<attendanceList.size();j++){
-                                Date nextDate = attendanceList.get(j).getDate();
-                                System.out.println("Next Date - "+nextDate);
-                                if(sdf.format(attendanceDate).equals(sdf.format(nextDate))){
-                                    System.out.println("Matched");
-                                    tempAttendanceList.add(attendanceList.get(j));
-                                    i++;
-                                }
-                                else{
-                                    break;
-                                }
-                            }
-                            String keyDate = sdf.format(attendanceDate);
-
-                            attendanceHashMap.put(k,tempAttendanceList);
-                            daywiseAttendanceList.add(tempAttendanceList);
-                            countList.add(k);
-                            k++;
-                        }
-                    }
-                    System.out.println("HashMap size - "+attendanceHashMap.size());
-                    if(daywiseAttendanceList.size()>0){
-
-                        AttendanceAdaptor attendanceAdaptor = new AttendanceAdaptor(getContext());
-                        lvDayWiseAttendance.setAdapter(attendanceAdaptor);
-                    }
-                }
-                else{
-                    lvDayWiseAttendance.setVisibility(View.GONE);
-                    llNoList.setVisibility(View.VISIBLE);
-                }
-            }
-        }.execute();
-
-    }
-*/
     class AttendanceAdaptor extends ArrayAdapter<Integer>{
         Context context;
         public AttendanceAdaptor(@NonNull Context context) {

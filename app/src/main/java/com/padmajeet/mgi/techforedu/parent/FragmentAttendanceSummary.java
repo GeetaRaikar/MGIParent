@@ -2,9 +2,7 @@ package com.padmajeet.mgi.techforedu.parent;
 
 
 import android.graphics.Color;
-import android.os.AsyncTask;
 import android.os.Bundle;
-import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -38,7 +36,6 @@ import java.util.List;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import cn.pedant.SweetAlert.SweetAlertDialog;
 
 
 /**
@@ -50,17 +47,12 @@ public class FragmentAttendanceSummary extends Fragment {
     private SessionManager sessionManager;
     private List<Attendance> attendanceList;
     private List<Subject> subjectList;
-    private FirebaseFirestore db = FirebaseFirestore.getInstance();
-    private CollectionReference subjectCollectionRef= db.collection("Subject");
     private LinearLayout rlAttendanceSummary;
     private LinearLayout llNoList;
-    private ImageView ivNoData;
-    private TextView tvNoData;
     private PieChart chart;
     private TableLayout tblSubject;
     private List<SubjectAttendance> subjectAttendanceList= new ArrayList<>();
     private String academicYearId,instituteId;
-    private SweetAlertDialog pDialog;
 
     public FragmentAttendanceSummary() {
         // Required empty public constructor
@@ -100,8 +92,6 @@ public class FragmentAttendanceSummary extends Fragment {
         tblSubject = view.findViewById(R.id.tblSubject);
         chart = view.findViewById(R.id.chartAttendanceSummary);
         llNoList = view.findViewById(R.id.llNoList);
-        tvNoData = view.findViewById(R.id.tvNoData);
-        ivNoData = view.findViewById(R.id.ivNoData);
 
         //chart.setCenterTextTypeface(tfLight);
         //chart.setCenterText(generateCenterSpannableText());
@@ -194,21 +184,28 @@ public class FragmentAttendanceSummary extends Fragment {
 
                 subjectAttendanceList.add(subjectAttendance);
             }
-            addSubjectRows();
-            //PieEntry pieEntry = new PieEntry(attendancePercList);
-            PieDataSet dataSet = new PieDataSet(attendancePercList, "- Subjects");
-            dataSet.setSliceSpace(3f);
-            dataSet.setSelectionShift(5f);
-            dataSet.setColors(ColorTemplate.MATERIAL_COLORS);
-            //dataSet.setSelectionShift(0f);
+            if(attendanceList.size() > 0) {
+                llNoList.setVisibility(View.GONE);
+                rlAttendanceSummary.setVisibility(View.VISIBLE);
+                addSubjectRows();
+                //PieEntry pieEntry = new PieEntry(attendancePercList);
+                PieDataSet dataSet = new PieDataSet(attendancePercList, "- Subjects");
+                dataSet.setSliceSpace(3f);
+                dataSet.setSelectionShift(5f);
+                dataSet.setColors(ColorTemplate.MATERIAL_COLORS);
+                //dataSet.setSelectionShift(0f);
 
-            PieData data = new PieData(dataSet);
-            data.setValueFormatter(new PercentFormatter());
-            data.setValueTextSize(11f);
-            data.setValueTextColor(Color.WHITE);
-            chart.setData(data);
+                PieData data = new PieData(dataSet);
+                data.setValueFormatter(new PercentFormatter());
+                data.setValueTextSize(11f);
+                data.setValueTextColor(Color.WHITE);
+                chart.setData(data);
 
-            chart.invalidate();
+                chart.invalidate();
+            }else{
+                llNoList.setVisibility(View.VISIBLE);
+                rlAttendanceSummary.setVisibility(View.GONE);
+            }
         }
     }
 

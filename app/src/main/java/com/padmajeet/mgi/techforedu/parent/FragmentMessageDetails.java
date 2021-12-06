@@ -36,12 +36,9 @@ import static android.os.Environment.DIRECTORY_DOWNLOADS;
 public class FragmentMessageDetails extends Fragment {
     private TextView tvSubject,tvDate,tvDesc,tvCreatorType,tvClass,tvAttachment;
     private LinearLayout llAttachment;
-    Message selectedMessage;
-    FirebaseFirestore db= FirebaseFirestore.getInstance();
-
-    CollectionReference batchCollectionRef=db.collection("Batch");
-    DocumentReference batchDocRef;
-    String[] fileName2;
+    private Message selectedMessage;
+    private FirebaseFirestore db= FirebaseFirestore.getInstance();
+    private String[] fileName2;
 
     public FragmentMessageDetails() {
         // Required empty public constructor
@@ -146,27 +143,6 @@ public class FragmentMessageDetails extends Fragment {
     //TODO
     private void openFile(){
         Toast.makeText(getContext(),"Download Complete",Toast.LENGTH_SHORT).show();
-       /* Intent install = new Intent(Intent.ACTION_VIEW);
-        String filePath = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-        +"/"+fileName2[1];
-        System.out.println("File Path - "+filePath);
-        File file = new File(filePath);
-        MimeTypeMap map = MimeTypeMap.getSingleton();
-        String ext = MimeTypeMap.getFileExtensionFromUrl(file.getName());
-        String type = map.getMimeTypeFromExtension(ext);
-        System.out.println("Type - "+type);
-
-        */
-        //if (type == null) {
-            //type = "*/*";
-        //}
-        /*
-        Intent intent = new Intent(Intent.ACTION_VIEW);
-        Uri data = Uri.fromFile(file);
-        System.out.println("data - "+data);
-        intent.setDataAndType(data, type);
-        startActivity(intent);
-        */
     }
 
     @Override

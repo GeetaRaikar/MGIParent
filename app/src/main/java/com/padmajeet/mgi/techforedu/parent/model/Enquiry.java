@@ -29,6 +29,7 @@ public class Enquiry {
     private String modifierId;
     private String creatorType="A";
     private String modifierType="A";
+    private int neetScore;
 
     @Exclude
     public String getId() {
@@ -213,5 +214,13 @@ public class Enquiry {
 
     public void setModifierType(String modifierType) {
         this.modifierType = modifierType;
+    }
+
+    public int getNeetScore() {
+        return neetScore;
+    }
+
+    public void setNeetScore(int neetScore) {
+        this.neetScore = neetScore;
     }
 }

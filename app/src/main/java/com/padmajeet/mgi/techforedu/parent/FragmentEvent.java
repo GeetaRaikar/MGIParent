@@ -41,26 +41,25 @@ import androidx.recyclerview.widget.RecyclerView;
 import cn.pedant.SweetAlert.SweetAlertDialog;
 
 public class FragmentEvent extends Fragment {
-    Gson gson;
-    View view;
-    String event_Date =null;
-    FirebaseFirestore db= FirebaseFirestore.getInstance();
-    CollectionReference eventCollectionRef = db.collection("Event");
-    CollectionReference eventTypeCollectionRef = db.collection("EventType");
+    private Gson gson;
+    private View view;
+    private String event_Date =null;
+    private FirebaseFirestore db= FirebaseFirestore.getInstance();
+    private CollectionReference eventCollectionRef = db.collection("Event");
+    private CollectionReference eventTypeCollectionRef = db.collection("EventType");
     private ArrayList<EventType> eventTypeList=new ArrayList<>();
     private ArrayList<Event> eventList=new ArrayList<>();
     private LinearLayout llNoList;
     private Student loggedInUserStudent;
     private String academicYearId;
     private Event event;
-    private EventType eventType;
-    private String eventTypeName;
     private RecyclerView rvEvent;
     private RecyclerView.Adapter eventAdapter;
     private RecyclerView.LayoutManager layoutManager;
     private Parent loggedInUser;
     private SweetAlertDialog pDialog;
     private ListenerRegistration eventListener;
+
     public FragmentEvent() {
         // Required empty public constructor
     }
@@ -72,8 +71,8 @@ public class FragmentEvent extends Fragment {
         gson = Utility.getGson();
         String studentJson = sessionManager.getString("loggedInUserStudent");
         loggedInUserStudent = gson.fromJson(studentJson, Student.class);
-        String parntJson = sessionManager.getString("loggedInUser");
-        loggedInUser = gson.fromJson(parntJson, Parent.class);
+        String parentJson = sessionManager.getString("loggedInUser");
+        loggedInUser = gson.fromJson(parentJson, Parent.class);
         academicYearId = sessionManager.getString("academicYearId");
         pDialog = Utility.createSweetAlertDialog(getContext());
     }
@@ -93,91 +92,88 @@ public class FragmentEvent extends Fragment {
     }
 
     private void getEventTypeList(){
-        if(eventTypeList.size()!=0){
-            eventTypeList.clear();
-        }
-
-        if(pDialog !=null && !pDialog.isShowing()) {
-            pDialog.show();
-        }
-        eventTypeCollectionRef
-            .whereEqualTo("instituteId",loggedInUser.getInstituteId())
-            .get()
-                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
-                    @Override
-                    public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
-
-                    for (DocumentSnapshot documentSnapshot:queryDocumentSnapshots.getDocuments()){
-                        // Log.d(TAG, document.getId()document.getId() + " => " + document.getData());
-                        EventType eventType=documentSnapshot.toObject(EventType.class);
-                        eventType.setId(documentSnapshot.getId());
-                        eventTypeList.add(eventType);
-                    }
-                    if(eventTypeList.size() > 0){
-                        getEventList();
-                    }else{
-                        if(pDialog!=null && pDialog.isShowing()){
-                            pDialog.dismiss();
+        if(loggedInUser != null) {
+            if (pDialog != null && !pDialog.isShowing()) {
+                pDialog.show();
+            }
+            if (eventTypeList.size() != 0) {
+                eventTypeList.clear();
+            }
+            eventTypeCollectionRef
+                    .whereEqualTo("instituteId", loggedInUser.getInstituteId())
+                    .get()
+                    .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+                        @Override
+                        public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+                            for (DocumentSnapshot documentSnapshot : queryDocumentSnapshots.getDocuments()) {
+                                // Log.d(TAG, document.getId()document.getId() + " => " + document.getData());
+                                EventType eventType = documentSnapshot.toObject(EventType.class);
+                                eventType.setId(documentSnapshot.getId());
+                                eventTypeList.add(eventType);
+                            }
+                            if (eventTypeList.size() > 0) {
+                                getEventList();
+                            } else {
+                                if (pDialog != null && pDialog.isShowing()) {
+                                    pDialog.dismiss();
+                                }
+                                rvEvent.setVisibility(View.GONE);
+                                llNoList.setVisibility(View.VISIBLE);
+                            }
                         }
-                        rvEvent.setVisibility(View.GONE);
-                        llNoList.setVisibility(View.VISIBLE);
-                    }
-
-                }
-            });
+                    });
+        }
     }
     private void  getEventList() {
-        if(eventList.size()!=0){
-            eventList.clear();
-        }
-
-
-        eventListener = eventCollectionRef
-                .whereEqualTo("academicYearId", academicYearId)
-                .whereEqualTo("recipientType", "P")
-                .orderBy("fromDate", Query.Direction.DESCENDING)
-                .orderBy("toDate", Query.Direction.DESCENDING)
-                .addSnapshotListener(new EventListener<QuerySnapshot>() {
-                    @Override
-                    public void onEvent(@Nullable QuerySnapshot queryDocumentSnapshots, @Nullable FirebaseFirestoreException e) {
-                        if (e != null) {
-                            return;
-                        }
-                        if (eventList != null) {
-                            eventList.clear();
-                        }
-                        for (DocumentSnapshot documentSnapshot:queryDocumentSnapshots.getDocuments()){
-                            // Log.d(TAG, document.getId()document.getId() + " => " + document.getData());
-                            event=documentSnapshot.toObject(Event.class);
-                            event.setId(documentSnapshot.getId());
-                            for(EventType eventType:eventTypeList){
-                                if(eventType.getId().equals(event.getTypeId())){
-                                    if(TextUtils.isEmpty(event.getBatchId()) || (event.getBatchId().equals(loggedInUserStudent.getCurrentBatchId()))){
-                                        eventList.add(event);
+        if(academicYearId != null) {
+            if (eventList.size() != 0) {
+                eventList.clear();
+            }
+            eventListener = eventCollectionRef
+                    .whereEqualTo("academicYearId", academicYearId)
+                    .whereEqualTo("recipientType", "P")
+                    .orderBy("fromDate", Query.Direction.DESCENDING)
+                    .orderBy("toDate", Query.Direction.DESCENDING)
+                    .addSnapshotListener(new EventListener<QuerySnapshot>() {
+                        @Override
+                        public void onEvent(@Nullable QuerySnapshot queryDocumentSnapshots, @Nullable FirebaseFirestoreException e) {
+                            if (e != null) {
+                                return;
+                            }
+                            if (eventList != null) {
+                                eventList.clear();
+                            }
+                            for (DocumentSnapshot documentSnapshot : queryDocumentSnapshots.getDocuments()) {
+                                // Log.d(TAG, document.getId()document.getId() + " => " + document.getData());
+                                event = documentSnapshot.toObject(Event.class);
+                                event.setId(documentSnapshot.getId());
+                                for (EventType eventType : eventTypeList) {
+                                    if (eventType.getId().equals(event.getTypeId())) {
+                                        if (TextUtils.isEmpty(event.getBatchId()) || (event.getBatchId().equals(loggedInUserStudent.getCurrentBatchId()))) {
+                                            eventList.add(event);
+                                        }
                                     }
                                 }
                             }
+                            System.out.println("event Size -" + eventList.size());
+                            if (eventList.size() != 0) {
+                                eventAdapter = new EventAdapter(eventList);
+                                rvEvent.setAdapter(eventAdapter);
+                                eventAdapter.notifyDataSetChanged();
+                                rvEvent.setVisibility(View.VISIBLE);
+                                llNoList.setVisibility(View.GONE);
+                            } else {
+                                rvEvent.setVisibility(View.GONE);
+                                llNoList.setVisibility(View.VISIBLE);
+                            }
+                            if (pDialog != null && pDialog.isShowing()) {
+                                pDialog.dismiss();
+                            }
                         }
-                        System.out.println("event Size -"+eventList.size());
-                        if(eventList.size()!=0) {
-                            eventAdapter = new EventAdapter(eventList);
-                            rvEvent.setAdapter(eventAdapter);
-                            eventAdapter.notifyDataSetChanged();
-                            rvEvent.setVisibility(View.VISIBLE);
-                            llNoList.setVisibility(View.GONE);
-                        }
-                        else{
-                            rvEvent.setVisibility(View.GONE);
-                            llNoList.setVisibility(View.VISIBLE);
-                        }
-                        if(pDialog!=null && pDialog.isShowing()){
-                            pDialog.dismiss();
-                        }
-                    }
-                });
-        // [END get_all_users]
-
-
+                    });
+        }else{
+            //academicYearId == null
+        }
     }
 
     class EventAdapter extends RecyclerView.Adapter<EventAdapter.MyViewHolder> {

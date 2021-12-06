@@ -41,17 +41,14 @@ import cn.pedant.SweetAlert.SweetAlertDialog;
  * A simple {@link Fragment} subclass.
  */
 public class FragmentSubject extends Fragment {
-    View view;
     private LinearLayout llNoList;
     private ArrayList<Subject> subjectList = new ArrayList<>();
-    private String academicYearId;
     private FirebaseFirestore db = FirebaseFirestore.getInstance();
     private CollectionReference subjectCollectionRef = db.collection("Subject");
     private RecyclerView rvSubject;
     private RecyclerView.Adapter subjectAdapter;
     private RecyclerView.LayoutManager layoutManager;
     private Student loggedInUserStudent;
-    private String instituteId;
     private Gson gson;
     private SweetAlertDialog pDialog;
     private SessionManager sessionManager;
@@ -64,8 +61,6 @@ public class FragmentSubject extends Fragment {
         gson = Utility.getGson();
         String studentJson = sessionManager.getString("loggedInUserStudent");
         loggedInUserStudent = gson.fromJson(studentJson, Student.class);
-        academicYearId = sessionManager.getString("academicYearId");
-        instituteId=sessionManager.getString("instituteId");
     }
     public FragmentSubject() {
         // Required empty public constructor
@@ -85,12 +80,12 @@ public class FragmentSubject extends Fragment {
         llNoList = view.findViewById(R.id.llNoList);
         rvSubject = view.findViewById(R.id.rvSubject);
         layoutManager = new LinearLayoutManager(getContext());
+        pDialog=Utility.createSweetAlertDialog(getContext());
         rvSubject.setLayoutManager(layoutManager);
         getSubjects();
     }
 
     private void getSubjects() {
-        pDialog=Utility.createSweetAlertDialog(getContext());
         if(pDialog!=null && !pDialog.isShowing()){
             pDialog.show();
         }

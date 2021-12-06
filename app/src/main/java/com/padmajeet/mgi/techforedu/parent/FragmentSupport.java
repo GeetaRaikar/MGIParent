@@ -58,28 +58,30 @@ public class FragmentSupport extends Fragment {
         if(pDialog == null && !pDialog.isShowing()) {
             pDialog.show();
         }
-        instituteCollectionRef
-                .document(instituteId)
-                .get()
-                .addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
-                    @Override
-                    public void onSuccess(DocumentSnapshot documentSnapshot) {
-                        if(pDialog != null && pDialog.isShowing()){
-                            pDialog.dismiss();
+        if(instituteId != null) {
+            instituteCollectionRef
+                    .document(instituteId)
+                    .get()
+                    .addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
+                        @Override
+                        public void onSuccess(DocumentSnapshot documentSnapshot) {
+                            if (pDialog != null && pDialog.isShowing()) {
+                                pDialog.dismiss();
+                            }
+                            institute = documentSnapshot.toObject(Institute.class);
+                            if (institute != null) {
+                                btnAdminNumber.setText("" + institute.getPrimaryContactNumber());
+                                btnAdminEmail.setText("" + institute.getEmailId());
+                            }
                         }
-                        institute= documentSnapshot.toObject(Institute.class);
-                        if(institute!=null){
-                            btnAdminNumber.setText("" + institute.getPrimaryContactNumber());
-                            btnAdminEmail.setText("" + institute.getEmailId());
-                        }
-                    }
-                })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
+                    })
+                    .addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
 
-                    }
-                });
+                        }
+                    });
+        }
 
         btnAdminNumber.setOnClickListener(new View.OnClickListener() {
             @Override

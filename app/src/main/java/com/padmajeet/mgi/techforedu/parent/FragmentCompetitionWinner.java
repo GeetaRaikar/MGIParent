@@ -3,25 +3,19 @@ package com.padmajeet.mgi.techforedu.parent;
 
 import android.content.Context;
 import android.os.Bundle;
-import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseExpandableListAdapter;
-import android.widget.ExpandableListAdapter;
 import android.widget.ExpandableListView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
-import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.gms.tasks.Task;
-import com.google.android.material.card.MaterialCardView;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
@@ -29,25 +23,21 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.Query;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.gson.Gson;
 import com.padmajeet.mgi.techforedu.parent.model.Competition;
 import com.padmajeet.mgi.techforedu.parent.model.CompetitionWinner;
-import com.padmajeet.mgi.techforedu.parent.model.Event;
 import com.padmajeet.mgi.techforedu.parent.model.Student;
 import com.padmajeet.mgi.techforedu.parent.util.SessionManager;
 import com.padmajeet.mgi.techforedu.parent.util.Utility;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import androidx.recyclerview.widget.LinearLayoutManager;
 import cn.pedant.SweetAlert.SweetAlertDialog;
 
 
@@ -56,27 +46,25 @@ import cn.pedant.SweetAlert.SweetAlertDialog;
  */
 public class FragmentCompetitionWinner extends Fragment {
 
-    ExpandableListView expListView;
+    private ExpandableListView expListView;
     private LinearLayout llNoList;
     private List<CompetitionWinner> competitionWinnerList = new ArrayList<>();
-    CompetitionWinner competitionWinner;
-    FirebaseFirestore db = FirebaseFirestore.getInstance();
-    CollectionReference competitionWinnerCollectionRef = db.collection("CompetitionWinner");
-    CollectionReference studentCollectionRef = db.collection("Student");
-    CollectionReference competitionCollectionRef = db.collection("Competition");
+    private CompetitionWinner competitionWinner;
+    private FirebaseFirestore db = FirebaseFirestore.getInstance();
+    private CollectionReference competitionWinnerCollectionRef = db.collection("CompetitionWinner");
+    private CollectionReference studentCollectionRef = db.collection("Student");
+    private CollectionReference competitionCollectionRef = db.collection("Competition");
     private ListenerRegistration competitionListener,competitionWinnerListener;
-    List<Competition> competitionList=new ArrayList<>();
+    private List<Competition> competitionList=new ArrayList<>();
     private Competition competition;
-    Event event;
     private Student loggedInUserStudent;
     private String loggedInUserStudentId;
     private String academicYearId;
-    Gson gson;
-    private View view = null;
-    List<String> listDataHeader = new ArrayList<String>();
-    HashMap<String, List<String>> listDataChild = new HashMap<String, List<String>>();
-    ExpandableListAdapter listAdapter;
-    Student student;
+    private Gson gson;
+    private List<String> listDataHeader = new ArrayList<String>();
+    private HashMap<String, List<String>> listDataChild = new HashMap<String, List<String>>();
+    private ExpandableListAdapter listAdapter;
+    private Student student;
     private SweetAlertDialog pDialog;
 
     @Override
@@ -112,50 +100,50 @@ public class FragmentCompetitionWinner extends Fragment {
         getCompetitionList();
     }
     private void getCompetitionList(){
-        if(pDialog!=null) {
-            pDialog.show();
-        }
-        competitionListener = competitionCollectionRef
-                .whereEqualTo("academicYearId",academicYearId)
-                .whereEqualTo("batchId",loggedInUserStudent.getCurrentBatchId())
-                .orderBy("fromDate", Query.Direction.DESCENDING)
-                .orderBy("toDate", Query.Direction.DESCENDING)
-                .addSnapshotListener(new EventListener<QuerySnapshot>() {
-                    @Override
-                    public void onEvent(@Nullable QuerySnapshot queryDocumentSnapshots, @Nullable FirebaseFirestoreException e) {
-                        if (e != null) {
-                            return;
-                        }
-                        if(competitionList.size()!=0){
-                            competitionList.clear();
-                        }
-                        if (pDialog != null) {
-                            pDialog.dismiss();
-                        }
-                        for (DocumentSnapshot document:queryDocumentSnapshots.getDocuments()) {
-                            competition = document.toObject(Competition.class);
-                            competition.setId(document.getId());
-                            competitionList.add(competition);
-                        }
-                        if(competitionList.size()>0){
-                            getCompetitionEventList();
-                        }
-                        else{
-                            expListView.setVisibility(View.GONE);
-                            llNoList.setVisibility(View.VISIBLE);
-                            if(pDialog!=null){
+        if(academicYearId != null && loggedInUserStudent != null) {
+            if (pDialog != null && !pDialog.isShowing()) {
+                pDialog.show();
+            }
+            competitionListener = competitionCollectionRef
+                    .whereEqualTo("academicYearId", academicYearId)
+                    .whereEqualTo("batchId", loggedInUserStudent.getCurrentBatchId())
+                    .orderBy("fromDate", Query.Direction.DESCENDING)
+                    .orderBy("toDate", Query.Direction.DESCENDING)
+                    .addSnapshotListener(new EventListener<QuerySnapshot>() {
+                        @Override
+                        public void onEvent(@Nullable QuerySnapshot queryDocumentSnapshots, @Nullable FirebaseFirestoreException e) {
+                            if (e != null) {
+                                return;
+                            }
+                            if (competitionList.size() != 0) {
+                                competitionList.clear();
+                            }
+                            if (pDialog != null && pDialog.isShowing()) {
                                 pDialog.dismiss();
                             }
+                            for (DocumentSnapshot document : queryDocumentSnapshots.getDocuments()) {
+                                competition = document.toObject(Competition.class);
+                                competition.setId(document.getId());
+                                competitionList.add(competition);
+                            }
+                            if (competitionList.size() > 0) {
+                                getCompetitionEventList();
+                            } else {
+                                expListView.setVisibility(View.GONE);
+                                llNoList.setVisibility(View.VISIBLE);
+                            }
                         }
-                    }
-                });
-        // [END get_all_users]
+                    });
+        }else{
+            //academicYearId , loggedInUserStudent == null
+        }
     }
 
     private void getCompetitionEventList() {
-
+        if (pDialog != null && !pDialog.isShowing()) {
+            pDialog.show();
+        }
         if(competitionList.size()!=0) {
-
             if (listDataHeader != null) {
                 listDataHeader.clear();
             }
@@ -171,11 +159,11 @@ public class FragmentCompetitionWinner extends Fragment {
             llNoList.setVisibility(View.GONE);
         }
         else {
+            if (pDialog != null && pDialog.isShowing()) {
+                pDialog.dismiss();
+            }
             expListView.setVisibility(View.GONE);
             llNoList.setVisibility(View.VISIBLE);
-        }
-        if(pDialog!=null){
-            pDialog.dismiss();
         }
     }
 
@@ -183,7 +171,6 @@ public class FragmentCompetitionWinner extends Fragment {
         if (competitionWinnerList.size() != 0) {
             competitionWinnerList.clear();
         }
-
         competitionWinnerListener = competitionWinnerCollectionRef
                 .whereEqualTo("competitionId", eventId)
                 .orderBy("rank", Query.Direction.ASCENDING)
@@ -213,6 +200,9 @@ public class FragmentCompetitionWinner extends Fragment {
                         //System.out.println("competitionWinnerNameList " + competitionWinnerNameList.size());
                         listDataChild.put(listDataHeader.get(i), competitionWinnerNameList);
                         if (listDataChild.size() == competitionList.size()) {
+                            if (pDialog != null && pDialog.isShowing()) {
+                                pDialog.dismiss();
+                            }
                             displayExpandableList();
                         }
                     }

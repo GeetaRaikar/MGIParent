@@ -45,13 +45,9 @@ import cn.pedant.SweetAlert.SweetAlertDialog;
  * A simple {@link Fragment} subclass.
  */
 public class FragmentStudentFees extends Fragment {
-    private View view = null;
     private Gson gson;
-    private String loggedInUserId;
     private Student loggedInUserStudent;
     private String loggedInUserStudentId;
-    private String academicYearId;
-    Bundle bundle = new Bundle();
     private LinearLayout llNoList;
     private List<StudentFees> studentFeesList = new ArrayList<>();
     private StudentFees studentFees;
@@ -69,8 +65,8 @@ public class FragmentStudentFees extends Fragment {
     private float paidFees=0;
     private TextView tvPendingFees,tvTotalFees,tvTotalAmount;
     private TableLayout tlFeeStructure;
-    int count=1;
-    LinearLayout llStudentFeeDetails,llFeeStructure,llFees;
+    private int count=1;
+    private LinearLayout llStudentFeeDetails,llFeeStructure,llFees;
     private Boolean visible=true;
     private SweetAlertDialog pDialog;
 
@@ -80,12 +76,9 @@ public class FragmentStudentFees extends Fragment {
         super.onCreate(savedInstanceState);
         SessionManager sessionManager = new SessionManager(getContext());
         gson = Utility.getGson();
-        loggedInUserId= sessionManager.getString("loggedInUserId");
         String studentJson = sessionManager.getString("loggedInUserStudent");
         loggedInUserStudent = gson.fromJson(studentJson, Student.class);
         loggedInUserStudentId= sessionManager.getString("loggedInUserStudentId");
-        academicYearId = sessionManager.getString("academicYearId");
-        super.onCreate(savedInstanceState);
         pDialog = Utility.createSweetAlertDialog(getContext());
     }
 
@@ -133,116 +126,121 @@ public class FragmentStudentFees extends Fragment {
         });
     }
     private void getFeeStructure() {
-        totalFees = 0;
-        if (feeStructureList.size() != 0) {
-            feeStructureList.clear();
-        }
+        if(loggedInUserStudent != null) {
+            totalFees = 0;
+            if (feeStructureList.size() != 0) {
+                feeStructureList.clear();
+            }
 
-        if (!pDialog.isShowing()) {
-            pDialog.show();
-        }
+            if (pDialog != null && !pDialog.isShowing()) {
+                pDialog.show();
+            }
 
-        feeStructureCollectionRef
-                .whereEqualTo("batchId", loggedInUserStudent.getCurrentBatchId())
-                .get()
-                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
-                    @Override
-                    public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
-                        System.out.print("FeeStructure addOnSuccessListener");
-                        if (pDialog != null) {
-                            pDialog.dismiss();
-                        }
-                        feeStructureList.clear();
-                        for (DocumentSnapshot document : queryDocumentSnapshots.getDocuments()) {
-                            feeStructure = document.toObject(FeeStructure.class);
-                            feeStructure.setId(document.getId());
-                            feeStructureList.add(feeStructure);
-                        }
-                        if (feeStructureList.size() != 0) {
-                            llStudentFeeDetails.setVisibility(View.VISIBLE);
-                            for (FeeStructure feeStructure : feeStructureList) {
-                                totalFees = totalFees + feeStructure.getAmount();
+            feeStructureCollectionRef
+                    .whereEqualTo("batchId", loggedInUserStudent.getCurrentBatchId())
+                    .get()
+                    .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+                        @Override
+                        public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+                            System.out.print("FeeStructure addOnSuccessListener");
+                            if(feeStructureList.size() > 0) {
+                                feeStructureList.clear();
                             }
-                            tvTotalFees.setText("₹ "+totalFees);
-                            tvTotalAmount.setText(""+totalFees);
-                            setFeeStructure();
+                            for (DocumentSnapshot document : queryDocumentSnapshots.getDocuments()) {
+                                feeStructure = document.toObject(FeeStructure.class);
+                                feeStructure.setId(document.getId());
+                                feeStructureList.add(feeStructure);
+                            }
+                            if (feeStructureList.size() != 0) {
+                                llStudentFeeDetails.setVisibility(View.VISIBLE);
+                                for (FeeStructure feeStructure : feeStructureList) {
+                                    totalFees = totalFees + feeStructure.getAmount();
+                                }
+                                tvTotalFees.setText("₹ " + totalFees);
+                                tvTotalAmount.setText("" + totalFees);
+                                setFeeStructure();
+                            } else {
+                                if (pDialog != null && pDialog.isShowing()) {
+                                    pDialog.dismiss();
+                                }
+                                llFees.setVisibility(View.GONE);
+                                llStudentFeeDetails.setVisibility(View.GONE);
+                                rvStudentFees.setVisibility(View.GONE);
+                                llNoList.setVisibility(View.VISIBLE);
+                            }
+
                         }
-                        else{
-                            llFees.setVisibility(View.GONE);
-                            llStudentFeeDetails.setVisibility(View.GONE);
+                    })
+                    .addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            if (pDialog != null && pDialog.isShowing()) {
+                                pDialog.dismiss();
+                            }
                             rvStudentFees.setVisibility(View.GONE);
                             llNoList.setVisibility(View.VISIBLE);
+                            System.out.print("FeeStructure addOnFailureListener1");
                         }
+                    });
 
-                    }
-                })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        if (pDialog != null) {
-                            pDialog.dismiss();
-                        }
-                        rvStudentFees.setVisibility(View.GONE);
-                        llNoList.setVisibility(View.VISIBLE);
-                        System.out.print("FeeStructure addOnFailureListener1");
-                    }
-                });
-
-        // [END get_all_users]
+        }else{
+            //loggedInUserStudent == null
+        }
 
     }
 
     private void getStudentFees() {
-        final SweetAlertDialog pDialog;
-        pDialog = Utility.createSweetAlertDialog(getContext());
-        pDialog.show();
-        studentFeesListener = studentFeesCollectionRef
-                .whereEqualTo("studentId", loggedInUserStudentId)
-                .orderBy("createdDate", Query.Direction.DESCENDING)
-                .addSnapshotListener(new EventListener<QuerySnapshot>() {
-                    @Override
-                    public void onEvent(@Nullable QuerySnapshot queryDocumentSnapshots, @Nullable FirebaseFirestoreException e) {
-                        if (e != null) {
-                            return;
-                        }
-                        if(studentFeesList.size()!=0){
-                            studentFeesList.clear();
-                        }
-                        if (pDialog != null) {
-                            pDialog.dismiss();
-                        }
-                        for (DocumentSnapshot document:queryDocumentSnapshots.getDocuments()) {
-                            studentFees = document.toObject(StudentFees.class);
-                            studentFees.setId(document.getId());
-                            studentFeesList.add(studentFees);
-                        }
-                        if(studentFeesList.size()>=1){
-                            for(StudentFees studentFees:studentFeesList){
-                                if(studentFees.getAmount()==0){
-                                    studentFeesList.remove(studentFees);
-                                    break;
+        if(loggedInUserStudentId != null) {
+            if (pDialog != null && !pDialog.isShowing()) {
+                pDialog.show();
+            }
+            studentFeesListener = studentFeesCollectionRef
+                    .whereEqualTo("studentId", loggedInUserStudentId)
+                    .orderBy("createdDate", Query.Direction.DESCENDING)
+                    .addSnapshotListener(new EventListener<QuerySnapshot>() {
+                        @Override
+                        public void onEvent(@Nullable QuerySnapshot queryDocumentSnapshots, @Nullable FirebaseFirestoreException e) {
+                            if (e != null) {
+                                return;
+                            }
+                            if (studentFeesList.size() != 0) {
+                                studentFeesList.clear();
+                            }
+                            if (pDialog != null && pDialog.isShowing()) {
+                                pDialog.dismiss();
+                            }
+                            for (DocumentSnapshot document : queryDocumentSnapshots.getDocuments()) {
+                                studentFees = document.toObject(StudentFees.class);
+                                studentFees.setId(document.getId());
+                                studentFeesList.add(studentFees);
+                            }
+                            if (studentFeesList.size() >= 1) {
+                                for (StudentFees studentFees : studentFeesList) {
+                                    if (studentFees.getAmount() == 0) {
+                                        studentFeesList.remove(studentFees);
+                                        break;
+                                    }
                                 }
                             }
-                        }
-                        if (studentFeesList.size() != 0) {
-                            System.out.println("StudentFee size - " + studentFeesList.size());
-                            for (StudentFees st : studentFeesList) {
-                                paidFees = paidFees + st.getAmount();
+                            if (studentFeesList.size() != 0) {
+                                System.out.println("StudentFee size - " + studentFeesList.size());
+                                for (StudentFees st : studentFeesList) {
+                                    paidFees = paidFees + st.getAmount();
+                                }
+                                studentFeesAdapter = new StudentFeesAdapter(studentFeesList);
+                                rvStudentFees.setAdapter(studentFeesAdapter);
+                                rvStudentFees.setVisibility(View.VISIBLE);
+                                llNoList.setVisibility(View.GONE);
+                            } else {
+                                llFees.setVisibility(View.GONE);
+                                rvStudentFees.setVisibility(View.GONE);
+                                llNoList.setVisibility(View.VISIBLE);
                             }
-                            studentFeesAdapter = new StudentFeesAdapter(studentFeesList);
-                            rvStudentFees.setAdapter(studentFeesAdapter);
-                            rvStudentFees.setVisibility(View.VISIBLE);
-                            llNoList.setVisibility(View.GONE);
-                        } else {
-                            llFees.setVisibility(View.GONE);
-                            rvStudentFees.setVisibility(View.GONE);
-                            llNoList.setVisibility(View.VISIBLE);
+                            float pendingFees = totalFees - paidFees;
+                            tvPendingFees.setText("₹ " + pendingFees);
                         }
-                        float pendingFees=totalFees-paidFees;
-                        tvPendingFees.setText("₹ "+pendingFees);
-                    }
-                });
-        // [END get_all_users]
+                    });
+        }
 
     }
 

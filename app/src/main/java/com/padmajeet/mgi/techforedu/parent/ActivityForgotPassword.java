@@ -34,25 +34,25 @@ import androidx.appcompat.app.AppCompatActivity;
 import cn.pedant.SweetAlert.SweetAlertDialog;
 
 public class ActivityForgotPassword extends AppCompatActivity {
-    Button btnSubmit,btnVerify;
-    String NewPassword;
-    String ReEnterPassword;
-    EditText etNewPassword;
-    EditText etReEnterPassword;
-    SweetAlertDialog pDialog;
-    Parent loggedInUser;
-    String loggedInUserId;
-    FirebaseFirestore db= FirebaseFirestore.getInstance();
-    CollectionReference parentCollectionRef=db.collection("Parent");
+    private Button btnSubmit,btnVerify;
+    private String NewPassword;
+    private String ReEnterPassword;
+    private EditText etNewPassword;
+    private EditText etReEnterPassword;
+    private TextView reSendOTP;
+    private SweetAlertDialog pDialog;
+    private Parent loggedInUser;
+    private String loggedInUserId;
+    private FirebaseFirestore db= FirebaseFirestore.getInstance();
+    private CollectionReference parentCollectionRef=db.collection("Parent");
     private FirebaseAuth mAuth;
     private String verificationCode;
     private String mVerificationId;
     private PhoneAuthProvider.ForceResendingToken mResendToken;
-    Gson gson;
+    private Gson gson;
     private PinView pinView;
-    String generatedOTP;
-    LinearLayout llOTP,llResetPassword;
-    SessionManager sessionManager;
+    private LinearLayout llOTP,llResetPassword;
+    private SessionManager sessionManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,55 +60,44 @@ public class ActivityForgotPassword extends AppCompatActivity {
         setContentView(R.layout.activity_forgot_password);
 
         mAuth = FirebaseAuth.getInstance();
-
-        sessionManager = new SessionManager(getApplicationContext());
-        String loggedInUserJson = sessionManager.getString("loggedInUser");
-        System.out.println("loggedInUserJson - " + loggedInUserJson);
+        pDialog=Utility.createSweetAlertDialog(ActivityForgotPassword.this);
+        sessionManager = new SessionManager(ActivityForgotPassword.this);
         gson = Utility.getGson();
-        loggedInUser = gson.fromJson(loggedInUserJson, Parent.class);
-        loggedInUserId = sessionManager.getString("loggedInUserId");
-        sendOTP();
+
         llResetPassword = findViewById(R.id.llResetPassword);
         llOTP = findViewById(R.id.llOTP);
-
         pinView = findViewById(R.id.pinview);
         etNewPassword = findViewById(R.id.etNewPassword);
         etReEnterPassword = findViewById(R.id.etReEnterPassword);
-
-        final TextView reSendOTP = findViewById(R.id.reSendOTP);
-        reSendOTP.setPaintFlags(reSendOTP.getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
+        btnSubmit = findViewById(R.id.btnSubmit);
         btnVerify = findViewById(R.id.btnVerify);
+        reSendOTP = findViewById(R.id.reSendOTP);
+
+        String loggedInUserJson = sessionManager.getString("loggedInUser");
+        System.out.println("loggedInUserJson - " + loggedInUserJson);
+        loggedInUser = gson.fromJson(loggedInUserJson, Parent.class);
+        loggedInUserId = sessionManager.getString("loggedInUserId");
+
+        sendOTP();
+
+        reSendOTP.setPaintFlags(reSendOTP.getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
 
         btnVerify.setOnClickListener(new View.OnClickListener() {
             @Override
-
             public void onClick(View view) {
-
                 String content = pinView.getText().toString();
                 System.out.println(content);
                 verifyVerificationCode(content);
-                /*if (generatedOTP.equals(content)) {
-                    llOTP.setVisibility(View.GONE);
-                    llResetPassword.setVisibility(View.VISIBLE);
-                } else {
-                    Toast.makeText(ActivityForgotPassword.this, "Incorrect OTP", Toast.LENGTH_LONG).show();
-                }*/
             }
         });
 
         reSendOTP.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                //generatedOTP = Utility.generateOTP();
-                //System.out.println("The generatedOTP is :" + generatedOTP);
-                //new SMS().sendSms("Dear User, Your verification code for password reset is " + generatedOTP+".", loggedInUser.getMobileNumber());
                 sendOTP();
             }
         });
 
-        btnSubmit = findViewById(R.id.btnSubmit);
-        // setup();
-        //setupCacheSize();
         btnSubmit.setOnClickListener(new View.OnClickListener() {
             @Override
 
@@ -125,7 +114,10 @@ public class ActivityForgotPassword extends AppCompatActivity {
                     etReEnterPassword.requestFocus();
                     return;
                 }
-                if (NewPassword.equals(ReEnterPassword)) {
+                if (loggedInUser != null && NewPassword.equals(ReEnterPassword)) {
+                    if(!pDialog.isShowing() && pDialog != null){
+                        pDialog.show();
+                    }
                     loggedInUser.setPassword(NewPassword);
                     loggedInUser.setStatus("A");
                     loggedInUser.setModifiedDate(new Date());
@@ -133,18 +125,22 @@ public class ActivityForgotPassword extends AppCompatActivity {
                     parentCollectionRef.document(loggedInUserId).set(loggedInUser).addOnCompleteListener(new OnCompleteListener<Void>() {
                         @Override
                         public void onComplete(@NonNull Task<Void> task) {
+                            if(pDialog.isShowing() && pDialog != null){
+                                pDialog.dismiss();
+                            }
                             if (task.isSuccessful()) {
-                                Toast.makeText(ActivityForgotPassword.this, "Updated Successfully",
-                                        Toast.LENGTH_SHORT).show();
                                 sessionManager.remove("loggedInUser");
                                 sessionManager.remove("loggedInUserId");
+                                Toast.makeText(ActivityForgotPassword.this, "Updated Successfully",
+                                        Toast.LENGTH_SHORT).show();
                                 Intent intent = new Intent(ActivityForgotPassword.this, ActivityLogin.class);
                                 overridePendingTransition(android.R.anim.slide_in_left, android.R.anim.slide_out_right);
                                 startActivity(intent);
                                 finish();
                             } else {
-                                // Log.d(TAG, "Error getting documents: ", task.getException());
                                 System.out.println("Error getting documents: -" + task.getException());
+                                Toast.makeText(ActivityForgotPassword.this, "Not successfully updated. Try it again!",
+                                        Toast.LENGTH_SHORT).show();
                             }
                         }
                     });
@@ -159,15 +155,14 @@ public class ActivityForgotPassword extends AppCompatActivity {
     }
 
     private void sendOTP() {
-        //generatedOTP = Utility.generateOTP();
-        //new SMS().sendSms("Dear User, Your verification code for password reset is " + generatedOTP + ".", loggedInUser.getMobileNumber());
-
-        PhoneAuthProvider.getInstance().verifyPhoneNumber(
-                "+91" + loggedInUser.getMobileNumber(),                     // Phone number to verify
-                60,                           // Timeout duration
-                TimeUnit.SECONDS,                // Unit of timeout
-                ActivityForgotPassword.this,        // Activity (for callback binding)
-                mCallback);  // OnVerificationStateChangedCallbacks
+        if(loggedInUser != null) {
+            PhoneAuthProvider.getInstance().verifyPhoneNumber(
+                    "+91" + loggedInUser.getMobileNumber(),                     // Phone number to verify
+                    60,                           // Timeout duration
+                    TimeUnit.SECONDS,                // Unit of timeout
+                    ActivityForgotPassword.this,        // Activity (for callback binding)
+                    mCallback);  // OnVerificationStateChangedCallbacks
+        }
     }
     private PhoneAuthProvider.OnVerificationStateChangedCallbacks mCallback = new PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
         @Override
@@ -176,13 +171,11 @@ public class ActivityForgotPassword extends AppCompatActivity {
             verificationCode = phoneAuthCredential.getSmsCode();
             System.out.println("verificationCode "+verificationCode);
         }
-
         @Override
         public void onVerificationFailed(FirebaseException e) {
             System.out.println("e.getMessage() "+e.getMessage());
             Toast.makeText(ActivityForgotPassword.this, e.getMessage(), Toast.LENGTH_LONG).show();
         }
-
         @Override
         public void onCodeSent(String s, PhoneAuthProvider.ForceResendingToken forceResendingToken) {
             super.onCodeSent(s, forceResendingToken);
@@ -191,9 +184,11 @@ public class ActivityForgotPassword extends AppCompatActivity {
     };
 
     private void verifyVerificationCode(String code) {
+        if(!pDialog.isShowing() && pDialog != null){
+            pDialog.show();
+        }
         //creating the credential
         PhoneAuthCredential credential = PhoneAuthProvider.getCredential(mVerificationId, code);
-
         //signing the user
         signInWithPhoneAuthCredential(credential);
     }
@@ -203,15 +198,15 @@ public class ActivityForgotPassword extends AppCompatActivity {
                 .addOnCompleteListener(ActivityForgotPassword.this, new OnCompleteListener<AuthResult>() {
                     @Override
                     public void onComplete(@NonNull Task<AuthResult> task) {
+                        if(pDialog.isShowing() && pDialog != null){
+                            pDialog.dismiss();
+                        }
                         if (task.isSuccessful()) {
                             llOTP.setVisibility(View.GONE);
                             llResetPassword.setVisibility(View.VISIBLE);
                         } else {
-
                             //verification unsuccessful.. display an error message
-
-                            String message = "Somthing is wrong, we will fix it soon...";
-
+                            String message = "Something is wrong, we will fix it soon...";
                             if (task.getException() instanceof FirebaseAuthInvalidCredentialsException) {
                                 message = "Invalid code entered...";
                             }

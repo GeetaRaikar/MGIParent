@@ -1,37 +1,23 @@
 package com.padmajeet.mgi.techforedu.parent;
 
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
 import android.content.Intent;
-import android.os.Build;
 import android.os.Bundle;
-import android.text.TextUtils;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
 import com.google.android.material.navigation.NavigationView;
-import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.iid.FirebaseInstanceId;
-import com.google.firebase.iid.InstanceIdResult;
 import com.google.gson.Gson;
 import com.padmajeet.mgi.techforedu.parent.model.Parent;
 import com.padmajeet.mgi.techforedu.parent.model.Student;
-import com.padmajeet.mgi.techforedu.parent.util.NotificationWorker;
 import com.padmajeet.mgi.techforedu.parent.util.SessionManager;
 import com.padmajeet.mgi.techforedu.parent.util.Utility;
-
-import java.util.concurrent.TimeUnit;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
-import androidx.core.app.NotificationManagerCompat;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.Fragment;
@@ -40,11 +26,6 @@ import androidx.fragment.app.FragmentTransaction;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.NavigationUI;
-import androidx.work.Constraints;
-import androidx.work.ExistingPeriodicWorkPolicy;
-import androidx.work.NetworkType;
-import androidx.work.PeriodicWorkRequest;
-import androidx.work.WorkManager;
 import cn.pedant.SweetAlert.SweetAlertDialog;
 
 
@@ -52,19 +33,14 @@ public class ActivityHome extends AppCompatActivity {
 
     private Gson gson;
     private Parent loggedInUser;
-    FirebaseFirestore db = FirebaseFirestore.getInstance();
-    DrawerLayout drawer;
-    SessionManager sessionManager;
-    private static final String uniqueWorkName = "com.padmajeet.eduapp.kiddie.parent.util.NotificaionWorker";
-    private static final long repeatIntervalMin = 60;
-    private static final long flexIntervalMin = 10;
-    SweetAlertDialog dialog;
+    private DrawerLayout drawer;
+    private NavigationView navigationView;
+    private SessionManager sessionManager;
+    private SweetAlertDialog dialog;
     private Student loggedInUserStudent;
-    private NotificationManagerCompat notificationManagerCompat;
-
-    private static final String CHANNEL_ID="Kiddies";
-    private static final String CHANNEL_NAME="Kiddies";
-    private static final String CHANNEL_DESC="Kiddies";
+    private ImageView ivProfilePic;
+    private TextView tv_nav_mobile_number,tv_nav_name;
+    private NavController navController;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,35 +50,7 @@ public class ActivityHome extends AppCompatActivity {
         setSupportActionBar(toolbar);
 
         drawer = findViewById(R.id.drawer_layout);
-        final NavigationView navigationView = findViewById(R.id.nav_view);
-
-        /*if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            Window w = getWindow();
-            w.setFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS, WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS);
-        }*/
-         /*
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            getWindow().setStatusBarColor(Color.TRANSPARENT);
-        }
-          */
-         if(Build.VERSION.SDK_INT>= Build.VERSION_CODES.O){
-             NotificationChannel channel=new NotificationChannel(CHANNEL_ID,CHANNEL_NAME,NotificationManager.IMPORTANCE_DEFAULT);
-             channel.setDescription(CHANNEL_DESC);
-             NotificationManager manager=getSystemService(NotificationManager.class);
-             manager.createNotificationChannel(channel);
-         }
-        /*System.out.println("onStart ");
-        NotificationCompat.Builder mBuilder=
-                new NotificationCompat.Builder(this,CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_notifications_active)
-                .setContentTitle("Hurray! It is working")
-                .setContentText("Your first notification")
-                .setPriority(NotificationCompat.PRIORITY_DEFAULT);
-        NotificationManagerCompat mNotificationMgr= NotificationManagerCompat.from(this);
-        mNotificationMgr.notify(1,mBuilder.build());
-        System.out.println("mNotificationMgr "+mNotificationMgr);*/
-
-
+        navigationView = findViewById(R.id.nav_view);
 
         sessionManager = new SessionManager(getApplicationContext());
         String userJson = sessionManager.getString("loggedInUser");
@@ -110,35 +58,18 @@ public class ActivityHome extends AppCompatActivity {
         loggedInUser = gson.fromJson(userJson, Parent.class);
         String studentJson = sessionManager.getString("loggedInUserStudent");
         loggedInUserStudent = gson.fromJson(studentJson, Student.class);
-
         sessionManager.putString("isFragmentHome", "false");
 
-        if(loggedInUserStudent != null) {
-            setTokenForNotificationFetching();
-        }
-
-        //startNotificationWorker();
         View header = navigationView.getHeaderView(0);
-        TextView tv_nav_name = header.findViewById(R.id.tv_nav_name);
-        TextView tv_nav_mobnum = header.findViewById(R.id.tv_nav_mobnum);
-        ImageView ivProfilePic = header.findViewById(R.id.ivProfilePic);
+        tv_nav_name = header.findViewById(R.id.tv_nav_name);
+        tv_nav_mobile_number = header.findViewById(R.id.tv_nav_mobile_number);
+        ivProfilePic = header.findViewById(R.id.ivProfilePic);
         if (loggedInUser != null) {
             tv_nav_name.setText(loggedInUser.getFirstName());
-            tv_nav_mobnum.setText("" + loggedInUser.getMobileNumber());
-           /*
-            String imageUrl = getString(R.string.imageUrl)+loggedInUser.getImageUrl();
-            //System.out.println("imageUrl "+imageUrl);
-            Glide.with(this)
-                    .load(imageUrl)
-                    .fitCenter()
-                    .apply(RequestOptions.circleCropTransform())
-                    .placeholder(R.drawable.ic_admin)
-                    .into(ivProfilePic);
-            */
+            tv_nav_mobile_number.setText("" + loggedInUser.getMobileNumber());
         }
 
-
-        NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment);
+        navController = Navigation.findNavController(this, R.id.nav_host_fragment);
         NavigationUI.setupActionBarWithNavController(this, navController, drawer);
         NavigationUI.setupWithNavController(navigationView, navController);
 
@@ -149,7 +80,6 @@ public class ActivityHome extends AppCompatActivity {
                 int id = menuItem.getItemId();
                 navigationView.setCheckedItem(id);
                 switch (id) {
-
                     case R.id.nav_home:
                         replaceFragment(new FragmentHome(), getString(R.string.home));
                         break;
@@ -245,31 +175,6 @@ public class ActivityHome extends AppCompatActivity {
                 return false;
             }
         });
-
-
-    }
-    private void setTokenForNotificationFetching(){
-        FirebaseInstanceId.getInstance().getInstanceId()
-                .addOnCompleteListener(new OnCompleteListener<InstanceIdResult>() {
-                    @Override
-                    public void onComplete(@NonNull Task<InstanceIdResult> task) {
-                        if(task.isSuccessful()){
-                            String token=task.getResult().getToken();
-                            System.out.println("token "+token);
-                            /* 27/08/2021
-                            Toast.makeText(getApplicationContext(),token,Toast.LENGTH_LONG);
-                            if(TextUtils.isEmpty(loggedInUserStudent.getToken())){
-                                loggedInUserStudent.setToken(token);
-                                db.collection("Student").document(loggedInUserStudent.getId()).set(loggedInUserStudent);
-                            }else {
-                                if (!loggedInUserStudent.getToken().equalsIgnoreCase(token)) {
-                                    loggedInUserStudent.setToken(token);
-                                    db.collection("Student").document(loggedInUserStudent.getId()).set(loggedInUserStudent);
-                                }
-                            }*/
-                        }
-                    }
-                });
     }
 
     @Override
@@ -300,17 +205,6 @@ public class ActivityHome extends AppCompatActivity {
         fragmentTransaction.addToBackStack(null);
         fragmentTransaction.commit();
 
-    }
-
-    private void startNotificationWorker(){
-        Constraints constraints = new Constraints.Builder()
-                .setRequiresCharging(false)
-                .setRequiredNetworkType(NetworkType.CONNECTED)
-                .build();
-        PeriodicWorkRequest notificationPeriodicWorkRequest =new PeriodicWorkRequest.Builder(
-                NotificationWorker.class, repeatIntervalMin, TimeUnit.MINUTES, flexIntervalMin, TimeUnit.MINUTES
-        ).setConstraints(constraints).build();
-        WorkManager.getInstance(getApplicationContext()).enqueueUniquePeriodicWork( uniqueWorkName, ExistingPeriodicWorkPolicy.REPLACE, notificationPeriodicWorkRequest );
     }
 
     @Override

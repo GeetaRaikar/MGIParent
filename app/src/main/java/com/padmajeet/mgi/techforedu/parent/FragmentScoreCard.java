@@ -5,7 +5,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
-import android.widget.TableLayout;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -21,7 +20,6 @@ import com.github.mikephil.charting.data.BarEntry;
 import com.github.mikephil.charting.formatter.ValueFormatter;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
@@ -70,10 +68,8 @@ public class FragmentScoreCard extends Fragment {
     private List<Subject> subjectList = new ArrayList<>();
     private Gson gson;
     private Student loggedInUserStudent;
-    private Parent loggedInUser;
-    private String academicYearId,instituteId;
+    private String academicYearId;
     private SweetAlertDialog pDialog;
-    private TextView tvExamSeriesName,tvExamSeriesDate;
     private String SET_LABEL = "Subject Wise Score";
     private List<String> subjectName = new ArrayList<>();
 
@@ -141,34 +137,44 @@ public class FragmentScoreCard extends Fragment {
     @Override
     public void onStart() {
         super.onStart();
-        subjectListener=subjectCollectionRef
-                .whereEqualTo("batchId", loggedInUserStudent.getCurrentBatchId())
-                .orderBy("createdDate", Query.Direction.ASCENDING)
-                .addSnapshotListener(new EventListener<QuerySnapshot>() {
-                    @Override
-                    public void onEvent(@Nullable QuerySnapshot queryDocumentSnapshots, @Nullable FirebaseFirestoreException e) {
-                        if (e != null) {
-                            return;
+        if(loggedInUserStudent != null) {
+            if (pDialog != null && !pDialog.isShowing()) {
+                pDialog.show();
+            }
+            subjectListener = subjectCollectionRef
+                    .whereEqualTo("batchId", loggedInUserStudent.getCurrentBatchId())
+                    .orderBy("createdDate", Query.Direction.ASCENDING)
+                    .addSnapshotListener(new EventListener<QuerySnapshot>() {
+                        @Override
+                        public void onEvent(@Nullable QuerySnapshot queryDocumentSnapshots, @Nullable FirebaseFirestoreException e) {
+                            if (e != null) {
+                                return;
+                            }
+                            if (pDialog != null && pDialog.isShowing()) {
+                                pDialog.dismiss();
+                            }
+                            if (subjectList.size() != 0) {
+                                subjectList.clear();
+                            }
+                            for (DocumentSnapshot document : queryDocumentSnapshots.getDocuments()) {
+                                // Log.d(TAG, document.getId()document.getId() + " => " + document.getData());
+                                Subject subject = document.toObject(Subject.class);
+                                subject.setId(document.getId());
+                                subjectList.add(subject);
+                            }
                         }
-                        if (pDialog != null) {
-                            pDialog.dismiss();
-                        }
-                        if (subjectList.size() != 0) {
-                            subjectList.clear();
-                        }
-                        for (DocumentSnapshot document:queryDocumentSnapshots.getDocuments()) {
-                            // Log.d(TAG, document.getId()document.getId() + " => " + document.getData());
-                            Subject subject = document.toObject(Subject.class);
-                            subject.setId(document.getId());
-                            subjectList.add(subject);
-                        }
-                    }
-                });
+                    });
+        }else{
+            //loggedInUserStudent == null
+        }
+
     }
 
     @Override
     public void onStop() {
         super.onStop();
+        examSeriesListener.remove();
+        subjectListener.remove();
     }
 
     @Override
@@ -179,10 +185,7 @@ public class FragmentScoreCard extends Fragment {
         gson = Utility.getGson();
         String studentJson = sessionManager.getString("loggedInUserStudent");
         loggedInUserStudent = gson.fromJson(studentJson, Student.class);
-        String loggedInUserJson = sessionManager.getString("loggedInUser");
-        loggedInUser = gson.fromJson(loggedInUserJson,Parent.class);
         academicYearId = sessionManager.getString("academicYearId");
-        instituteId=sessionManager.getString("instituteId");
     }
 
     @Override
@@ -204,103 +207,139 @@ public class FragmentScoreCard extends Fragment {
         getExamSeriesOfBatch();
     }
     private void  getExamSeriesOfBatch() {
-        examSeriesListener = examSeriesCollectionRef
-                .whereEqualTo("academicYearId", academicYearId)
-                .whereEqualTo("batchId", loggedInUserStudent.getCurrentBatchId())
-                .orderBy("createdDate", Query.Direction.DESCENDING)
-                .addSnapshotListener(new EventListener<QuerySnapshot>() {
-                    @Override
-                    public void onEvent(@Nullable QuerySnapshot queryDocumentSnapshots, @Nullable FirebaseFirestoreException e) {
-                        if (e != null) {
-                            return;
+        if(loggedInUserStudent != null && academicYearId != null) {
+            if (pDialog != null && !pDialog.isShowing()) {
+                pDialog.show();
+            }
+            examSeriesListener = examSeriesCollectionRef
+                    .whereEqualTo("academicYearId", academicYearId)
+                    .whereEqualTo("batchId", loggedInUserStudent.getCurrentBatchId())
+                    .orderBy("createdDate", Query.Direction.DESCENDING)
+                    .addSnapshotListener(new EventListener<QuerySnapshot>() {
+                        @Override
+                        public void onEvent(@Nullable QuerySnapshot queryDocumentSnapshots, @Nullable FirebaseFirestoreException e) {
+                            if (e != null) {
+                                return;
+                            }
+                            if (examSeriesList.size() != 0) {
+                                examSeriesList.clear();
+                            }
+                            for (DocumentSnapshot documentSnapshot : queryDocumentSnapshots.getDocuments()) {
+                                // Log.d(TAG, document.getId()document.getId() + " => " + document.getData());
+                                ExamSeries examSeries = documentSnapshot.toObject(ExamSeries.class);
+                                examSeries.setId(documentSnapshot.getId());
+                                examSeriesList.add(examSeries);
+                            }
+                            if (examSeriesList.size() != 0) {
+                                getAllExamOfExamSeriesOfBatch();
+                            } else {
+                                if (pDialog != null && pDialog.isShowing()) {
+                                    pDialog.dismiss();
+                                }
+                                rvScoreCard.setVisibility(View.GONE);
+                                llNoList.setVisibility(View.VISIBLE);
+                            }
                         }
-                        if (examSeriesList.size() != 0) {
-                            examSeriesList.clear();
-                        }
-                        for (DocumentSnapshot documentSnapshot:queryDocumentSnapshots.getDocuments()){
-                            // Log.d(TAG, document.getId()document.getId() + " => " + document.getData());
-                            ExamSeries examSeries = documentSnapshot.toObject(ExamSeries.class);
-                            examSeries.setId(documentSnapshot.getId());
-                            examSeriesList.add(examSeries);
-                        }
-                        if (examSeriesList.size() != 0) {
-                            getAllExamOfExamSeriesOfBatch();
-                        } else {
-                            rvScoreCard.setVisibility(View.GONE);
-                            llNoList.setVisibility(View.VISIBLE);
-                        }
-                    }
-                });
+                    });
+        }else{
+            //academicYearId, loggedInUserStudent == null
+        }
     }
     public void getAllExamOfExamSeriesOfBatch(){
-        examCollectionRef
-                .whereEqualTo("batchId", loggedInUserStudent.getCurrentBatchId())
-                .orderBy("date", Query.Direction.ASCENDING)
-                .get()
-                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
-                    @Override
-                    public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
-                        if(examList.size()>0) {
-                            examList.clear();
-                        }
-                        for (DocumentSnapshot document : queryDocumentSnapshots.getDocuments()) {
-                            Exam exam = document.toObject(Exam.class);
-                            exam.setId(document.getId());
-                            examList.add(exam);
-                        }
-                        if(examList.size() > 0){
-                            for(Exam ex:examList) {
-                                for (Subject sub : subjectList) {
-                                    if(ex.getSubjectId().equals(sub.getId())){
-                                        ex.setSubjectId(sub.getName());
-                                        break;
+        if(loggedInUserStudent != null) {
+            if (pDialog != null && !pDialog.isShowing()) {
+                pDialog.show();
+            }
+            examCollectionRef
+                    .whereEqualTo("batchId", loggedInUserStudent.getCurrentBatchId())
+                    .orderBy("date", Query.Direction.ASCENDING)
+                    .get()
+                    .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+                        @Override
+                        public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+                            if (examList.size() > 0) {
+                                examList.clear();
+                            }
+                            for (DocumentSnapshot document : queryDocumentSnapshots.getDocuments()) {
+                                Exam exam = document.toObject(Exam.class);
+                                exam.setId(document.getId());
+                                examList.add(exam);
+                            }
+                            if (examList.size() > 0) {
+                                for (Exam ex : examList) {
+                                    for (Subject sub : subjectList) {
+                                        if (ex.getSubjectId().equals(sub.getId())) {
+                                            ex.setSubjectId(sub.getName());
+                                            break;
+                                        }
                                     }
                                 }
+                                getScoreCardOfStudent();
+                            } else {
+                                if (pDialog != null && pDialog.isShowing()) {
+                                    pDialog.dismiss();
+                                }
+                                rvScoreCard.setVisibility(View.GONE);
+                                llNoList.setVisibility(View.VISIBLE);
                             }
-                            getScoreCardOfStudent();
-                        }else {
-                            rvScoreCard.setVisibility(View.GONE);
-                            llNoList.setVisibility(View.VISIBLE);
                         }
-                    }
-                })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                    }
-                });
+                    })
+                    .addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            if (pDialog != null && pDialog.isShowing()) {
+                                pDialog.dismiss();
+                            }
+                        }
+                    });
+        }else{
+            //loggedInUserStudent == null
+        }
     }
     public void getScoreCardOfStudent(){
-        scoreCardCollectionRef
-                .whereEqualTo("studentId", loggedInUserStudent.getId())
-                .get()
-                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
-                    @Override
-                    public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
-                        if(scoreCardList.size()>0) {
-                            scoreCardList.clear();
+        if(loggedInUserStudent != null) {
+            if (pDialog != null && !pDialog.isShowing()) {
+                pDialog.show();
+            }
+            scoreCardCollectionRef
+                    .whereEqualTo("studentId", loggedInUserStudent.getId())
+                    .get()
+                    .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+                        @Override
+                        public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+                            if (scoreCardList.size() > 0) {
+                                scoreCardList.clear();
+                            }
+                            for (DocumentSnapshot document : queryDocumentSnapshots.getDocuments()) {
+                                ScoreCard scoreCard = document.toObject(ScoreCard.class);
+                                scoreCard.setId(document.getId());
+                                scoreCardList.add(scoreCard);
+                            }
+                            if (pDialog != null && pDialog.isShowing()) {
+                                pDialog.dismiss();
+                            }
+                            if (scoreCardList.size() > 0) {
+                                scoreCardAdapter = new ExamSeriesAdapter(examSeriesList);
+                                rvScoreCard.setAdapter(scoreCardAdapter);
+                                rvScoreCard.setVisibility(View.VISIBLE);
+                                llNoList.setVisibility(View.GONE);
+                            } else {
+                                rvScoreCard.setVisibility(View.GONE);
+                                llNoList.setVisibility(View.VISIBLE);
+                            }
                         }
-                        for (DocumentSnapshot document : queryDocumentSnapshots.getDocuments()) {
-                            ScoreCard scoreCard = document.toObject(ScoreCard.class);
-                            scoreCard.setId(document.getId());
-                            scoreCardList.add(scoreCard);
+                    })
+                    .addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            if (pDialog != null && pDialog.isShowing()) {
+                                pDialog.dismiss();
+                            }
                         }
-                        if(scoreCardList.size() > 0){
-                            scoreCardAdapter = new ExamSeriesAdapter(examSeriesList);
-                            rvScoreCard.setAdapter(scoreCardAdapter);
-                            rvScoreCard.setVisibility(View.VISIBLE);
-                            llNoList.setVisibility(View.GONE);
-                        }else {
-                            rvScoreCard.setVisibility(View.GONE);
-                            llNoList.setVisibility(View.VISIBLE);
-                        }
-                    }
-                })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                    }
-                });
+                    });
+        }else{
+            //loggedInUserStudent == null
+        }
     }
     class ExamSeriesAdapter extends RecyclerView.Adapter<ExamSeriesAdapter.MyViewHolder> {
         private List<ExamSeries> examSeriesList;

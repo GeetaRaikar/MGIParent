@@ -1,6 +1,5 @@
 package com.padmajeet.mgi.techforedu.parent;
 
-
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -25,7 +24,6 @@ import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.gson.Gson;
-import com.padmajeet.mgi.techforedu.parent.model.AcademicYear;
 import com.padmajeet.mgi.techforedu.parent.model.Batch;
 import com.padmajeet.mgi.techforedu.parent.model.Parent;
 import com.padmajeet.mgi.techforedu.parent.model.Section;
@@ -44,35 +42,25 @@ import cn.pedant.SweetAlert.SweetAlertDialog;
  * A simple {@link Fragment} subclass.
  */
 public class FragmentProfile extends Fragment {
-
-
-    private View view;
-
+    private View view=null;
     private Parent loggedInUser;
     private EditText etMobileNumber, etFatherName, etMotherName, etEmail, etAddress;
-    ImageView ivProfilePic;
-    Button btUpdateProfile;
+    private ImageView ivProfilePic;
+    private Button btUpdateProfile;
     boolean isEmailEdited, isFatherNameEdited, isMotherNameEdited, isAddressEdited;
-    Fragment currentFragment;
-    Gson gson;
+    private Gson gson;
     private String loggedInUserId;
-    private String academicYearId;
-    private AcademicYear academicYear;
     private Student loggedInUserStudent;
-    private String LoggedInUserStudentId;
-    TextView tvResetPassword;
-    TextView tvBatchName, tvSectionName, tvStudentName, tvName;
-    ImageView ivProfile;
-
-    FirebaseFirestore db = FirebaseFirestore.getInstance();
-    CollectionReference studentCollectionRef = db.collection("Student");
-    CollectionReference parentCollectionRef = db.collection("Parent");
-    CollectionReference batchCollectionRef = db.collection("Batch");
-    CollectionReference sectionCollectionRef = db.collection("Section");
-    DocumentReference sectionDocRef;
-    DocumentReference batchDocRef;
-    Batch batch;
-    Section section;
+    private TextView tvResetPassword;
+    private TextView tvBatchName, tvSectionName, tvStudentName, tvName;
+    private FirebaseFirestore db = FirebaseFirestore.getInstance();
+    private CollectionReference parentCollectionRef = db.collection("Parent");
+    private CollectionReference batchCollectionRef = db.collection("Batch");
+    private CollectionReference sectionCollectionRef = db.collection("Section");
+    private DocumentReference sectionDocRef;
+    private DocumentReference batchDocRef;
+    private Batch batch;
+    private Section section;
 
     public FragmentProfile() {
         // Required empty public constructor
@@ -89,10 +77,6 @@ public class FragmentProfile extends Fragment {
         loggedInUserId = sessionManager.getString("loggedInUserId");
         String studentJson = sessionManager.getString("loggedInUserStudent");
         loggedInUserStudent = gson.fromJson(studentJson, Student.class);
-        LoggedInUserStudentId = sessionManager.getString("loggedInUserStudentId");
-        String selectedAcademicYearJson = sessionManager.getString("AcademicYear");
-        academicYearId = sessionManager.getString("AcademicYearId");
-        academicYear = gson.fromJson(selectedAcademicYearJson, AcademicYear.class);
     }
 
     @Override
@@ -101,7 +85,6 @@ public class FragmentProfile extends Fragment {
         view = inflater.inflate(R.layout.fragment_profile, container, false);
         ((ActivityHome) getActivity()).getSupportActionBar().setTitle(getString(R.string.profile));
 
-        currentFragment = this;
         isEmailEdited = false;
         isFatherNameEdited = false;
         isMotherNameEdited = false;

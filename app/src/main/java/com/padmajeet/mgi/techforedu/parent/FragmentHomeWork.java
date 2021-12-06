@@ -1,7 +1,5 @@
 package com.padmajeet.mgi.techforedu.parent;
 
-
-import android.app.DatePickerDialog;
 import android.app.DownloadManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -18,10 +16,8 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.Nullable;
-import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentChange;
-import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -30,12 +26,8 @@ import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
-import com.google.firebase.storage.FirebaseStorage;
-import com.google.firebase.storage.StorageReference;
 import com.google.gson.Gson;
-import com.padmajeet.mgi.techforedu.parent.model.Batch;
 import com.padmajeet.mgi.techforedu.parent.model.HomeWork;
-import com.padmajeet.mgi.techforedu.parent.model.Section;
 import com.padmajeet.mgi.techforedu.parent.model.Student;
 import com.padmajeet.mgi.techforedu.parent.model.Subject;
 import com.padmajeet.mgi.techforedu.parent.util.SessionManager;
@@ -64,58 +56,55 @@ public class FragmentHomeWork extends Fragment {
     private LinearLayout llNoList;
     private RecyclerView.Adapter homeWorkAdapter;
     private RecyclerView.LayoutManager layoutManager;
-    SessionManager sessionManager;
-    Gson gson;
-    private String loggedInUserId;
+    private Gson gson;
     private String academicYearId;
-    private String schoolId;
     private Student loggedInUserStudent;
-    SweetAlertDialog pDialog;
+    private SweetAlertDialog pDialog;
     private FirebaseFirestore db=FirebaseFirestore.getInstance();
     private List<HomeWork> homeWorkList=new ArrayList<>();
     private List<Subject> subjectList=new ArrayList<>();
-    DocumentReference batchDocRef;
-    CollectionReference homeWorkCollectionRef =db.collection("HomeWork");
-    CollectionReference subjectCollectionRef =db.collection("Subject");
-    Subject subject;
-    HomeWork homeWork;
-    Batch selectedBatch;
-    Section section;
-    long downloadID;
-    Batch batch;
-    Section selectedSection;
-    BottomSheetDialog bottomSheetDialog;
-    DatePickerDialog picker;
-    DownloadManager downloadManager;
-    private StorageReference mStorageRef = FirebaseStorage.getInstance().getReference();
+    private CollectionReference homeWorkCollectionRef =db.collection("HomeWork");
+    private CollectionReference subjectCollectionRef =db.collection("Subject");
+    private Subject subject;
+    private HomeWork homeWork;
+    private DownloadManager downloadManager;
     private ListenerRegistration homeworkListener;
     private ListenerRegistration subjectListener;
 
     @Override
     public void onStart() {
         super.onStart();
-
-        subjectListener = subjectCollectionRef
-                .whereEqualTo("batchId", loggedInUserStudent.getCurrentBatchId())
-                .orderBy("createdDate", Query.Direction.ASCENDING)
-                .addSnapshotListener(new EventListener<QuerySnapshot>() {
-                    @Override
-                    public void onEvent(@Nullable QuerySnapshot queryDocumentSnapshots, @Nullable FirebaseFirestoreException e) {
-                        if (e != null) {
-                            return;
+        if(loggedInUserStudent != null) {
+            if(pDialog != null && !pDialog.isShowing()){
+                pDialog.show();
+            }
+            subjectListener = subjectCollectionRef
+                    .whereEqualTo("batchId", loggedInUserStudent.getCurrentBatchId())
+                    .orderBy("createdDate", Query.Direction.ASCENDING)
+                    .addSnapshotListener(new EventListener<QuerySnapshot>() {
+                        @Override
+                        public void onEvent(@Nullable QuerySnapshot queryDocumentSnapshots, @Nullable FirebaseFirestoreException e) {
+                            if (e != null) {
+                                return;
+                            }
+                            if(pDialog != null && pDialog.isShowing()){
+                                pDialog.dismiss();
+                            }
+                            if (subjectList.size() != 0) {
+                                subjectList.clear();
+                            }
+                            for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
+                                // Log.d(TAG, document.getId()document.getId() + " => " + document.getData());
+                                subject = document.toObject(Subject.class);
+                                subject.setId(document.getId());
+                                subjectList.add(subject);
+                            }
+                            //System.out.println("subjectList " + subjectList.size());
                         }
-                        if (subjectList.size() != 0) {
-                            subjectList.clear();
-                        }
-                        for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
-                            // Log.d(TAG, document.getId()document.getId() + " => " + document.getData());
-                            subject = document.toObject(Subject.class);
-                            subject.setId(document.getId());
-                            subjectList.add(subject);
-                        }
-                        System.out.println("subjectList "+subjectList.size());
-                    }
-                });
+                    });
+        }else{
+            //loggedInUserStudent == null
+        }
 
     }
 
@@ -132,15 +121,12 @@ public class FragmentHomeWork extends Fragment {
         super.onCreate(savedInstanceState);
         SessionManager sessionManager = new SessionManager(getContext());
         gson = Utility.getGson();
-        loggedInUserId= sessionManager.getString("loggedInUserId");
         String studentJson = sessionManager.getString("loggedInUserStudent");
         loggedInUserStudent = gson.fromJson(studentJson, Student.class);
-        schoolId = sessionManager.getString("schoolId");
         academicYearId = sessionManager.getString("academicYearId");
         System.out.println("academicYearId  "+academicYearId);
         System.out.println("loggedInUserStudent.getCurrentBatchId()  "+loggedInUserStudent.getCurrentBatchId());
         System.out.println("loggedInUserStudent.getSectionId()  "+loggedInUserStudent.getCurrentSectionId());
-
     }
 
     public FragmentHomeWork() {
@@ -164,47 +150,46 @@ public class FragmentHomeWork extends Fragment {
     }
 
     private void  getHomeWork(){
-        if(homeWorkList.size()!=0){
-            homeWorkList.clear();
-        }
-        pDialog = Utility.createSweetAlertDialog(getContext());
-        if(!pDialog.isShowing()){
-            pDialog.show();
-        }
-
-        homeworkListener=homeWorkCollectionRef
-                .whereEqualTo("academicYearId",academicYearId)
-                .whereEqualTo("batchId",loggedInUserStudent.getCurrentBatchId())
-                .whereEqualTo("sectionId",loggedInUserStudent.getCurrentSectionId())
-                .orderBy("createdDate", Query.Direction.DESCENDING)
-                .orderBy("dueDate",Query.Direction.DESCENDING)
-                .addSnapshotListener(new EventListener<QuerySnapshot>() {
-                    @Override
-                    public void onEvent(@Nullable QuerySnapshot queryDocumentSnapshots, @Nullable FirebaseFirestoreException e) {
-                        if (e != null) {
-                            return;
-                        }
-                        if (homeWorkList.size() != 0) {
-                            homeWorkList.clear();
-                        }
-                        System.out.println("queryDocumentSnapshots.getDocumentChanges() "+queryDocumentSnapshots.getDocumentChanges());
-                        System.out.println("onStart ");
-                        NotificationCompat.Builder mBuilder=
-                                new NotificationCompat.Builder(getContext(),"assignment")
-                                        .setSmallIcon(R.drawable.ic_notifications_active)
-                                        .setContentTitle("Assignment")
-                                        .setContentText("New Assignment")
-                                        .setPriority(NotificationCompat.PRIORITY_DEFAULT);
-                        NotificationManagerCompat mNotificationMgr= NotificationManagerCompat.from(getContext());
-                        mNotificationMgr.notify(2,mBuilder.build());
-                        System.out.println("mNotificationMgr "+mNotificationMgr);
-                        for (DocumentChange dc : queryDocumentSnapshots.getDocumentChanges()) {
-                            System.out.println("queryDocumentSnapshots.getDocumentChanges() "+dc.getType());
-                            if (dc.getType() == DocumentChange.Type.ADDED) {
-                                String title = dc.getDocument().getData().get("subjectName").toString();
-                                String body = dc.getDocument().getData().get("name").toString();
-                                System.out.println("title "+title);
-                                System.out.println("body "+body);
+        if(academicYearId != null && loggedInUserStudent != null) {
+            if (homeWorkList.size() != 0) {
+                homeWorkList.clear();
+            }
+            if (pDialog != null && pDialog.isShowing()) {
+                pDialog.dismiss();
+            }
+            homeworkListener = homeWorkCollectionRef
+                    .whereEqualTo("academicYearId", academicYearId)
+                    .whereEqualTo("batchId", loggedInUserStudent.getCurrentBatchId())
+                    .whereEqualTo("sectionId", loggedInUserStudent.getCurrentSectionId())
+                    .orderBy("createdDate", Query.Direction.DESCENDING)
+                    .orderBy("dueDate", Query.Direction.DESCENDING)
+                    .addSnapshotListener(new EventListener<QuerySnapshot>() {
+                        @Override
+                        public void onEvent(@Nullable QuerySnapshot queryDocumentSnapshots, @Nullable FirebaseFirestoreException e) {
+                            if (e != null) {
+                                return;
+                            }
+                            if (homeWorkList.size() != 0) {
+                                homeWorkList.clear();
+                            }
+                            System.out.println("queryDocumentSnapshots.getDocumentChanges() " + queryDocumentSnapshots.getDocumentChanges());
+                            System.out.println("onStart ");
+                            NotificationCompat.Builder mBuilder =
+                                    new NotificationCompat.Builder(getContext(), "assignment")
+                                            .setSmallIcon(R.drawable.ic_notifications_active)
+                                            .setContentTitle("Assignment")
+                                            .setContentText("New Assignment")
+                                            .setPriority(NotificationCompat.PRIORITY_DEFAULT);
+                            NotificationManagerCompat mNotificationMgr = NotificationManagerCompat.from(getContext());
+                            mNotificationMgr.notify(2, mBuilder.build());
+                            System.out.println("mNotificationMgr " + mNotificationMgr);
+                            for (DocumentChange dc : queryDocumentSnapshots.getDocumentChanges()) {
+                                System.out.println("queryDocumentSnapshots.getDocumentChanges() " + dc.getType());
+                                if (dc.getType() == DocumentChange.Type.ADDED) {
+                                    String title = dc.getDocument().getData().get("subjectName").toString();
+                                    String body = dc.getDocument().getData().get("name").toString();
+                                    System.out.println("title " + title);
+                                    System.out.println("body " + body);
                                 /*notificationManagerCompat=NotificationManagerCompat.from(getContext());
 
                                 //Method to set Notifications
@@ -217,40 +202,42 @@ public class FragmentHomeWork extends Fragment {
                                         .build();
                                 notificationManagerCompat.notify(1,notification);*/
 
-                            }
-                        }
-                        for (DocumentSnapshot document:queryDocumentSnapshots.getDocuments()) {
-                            // Log.d(TAG, document.getId()document.getId() + " => " + document.getData());
-                            homeWork = document.toObject(HomeWork.class);
-                            homeWork.setId(document.getId());
-                            for(int i=0;i<subjectList.size();i++){
-                                if(homeWork.getSubjectId().equals(subjectList.get(i).getId())){
-                                    homeWork.setSubjectName(subjectList.get(i).getName());
-                                    break;
                                 }
                             }
-                            homeWorkList.add(homeWork);
-                        }
-                        System.out.println("homeWorkList "+homeWorkList.size());
-                        if (homeWorkList.size() != 0) {
-                            if(pDialog!=null){
-                                pDialog.dismiss();
+                            for (DocumentSnapshot document : queryDocumentSnapshots.getDocuments()) {
+                                // Log.d(TAG, document.getId()document.getId() + " => " + document.getData());
+                                homeWork = document.toObject(HomeWork.class);
+                                homeWork.setId(document.getId());
+                                for (int i = 0; i < subjectList.size(); i++) {
+                                    if (homeWork.getSubjectId().equals(subjectList.get(i).getId())) {
+                                        homeWork.setSubjectName(subjectList.get(i).getName());
+                                        break;
+                                    }
+                                }
+                                homeWorkList.add(homeWork);
                             }
+                            System.out.println("homeWorkList " + homeWorkList.size());
+                            if (homeWorkList.size() != 0) {
+                                if (pDialog != null && pDialog.isShowing()) {
+                                    pDialog.dismiss();
+                                }
+                                rvHomeWork.setVisibility(View.VISIBLE);
+                                llNoList.setVisibility(View.GONE);
+                                homeWorkAdapter = new HomeWorkAdapter(homeWorkList);
+                                rvHomeWork.setAdapter(homeWorkAdapter);
 
-                            rvHomeWork.setVisibility(View.VISIBLE);
-                            llNoList.setVisibility(View.GONE);
-                            homeWorkAdapter = new HomeWorkAdapter(homeWorkList);
-                            rvHomeWork.setAdapter(homeWorkAdapter);
-
-                        } else {
-                            if(pDialog!=null){
-                                pDialog.dismiss();
+                            } else {
+                                if (pDialog != null && pDialog.isShowing()) {
+                                    pDialog.dismiss();
+                                }
+                                rvHomeWork.setVisibility(View.GONE);
+                                llNoList.setVisibility(View.VISIBLE);
                             }
-                            rvHomeWork.setVisibility(View.GONE);
-                            llNoList.setVisibility(View.VISIBLE);
                         }
-                    }
-                });
+                    });
+        }else{
+            //academicYearId, loggedInUserStudent == null
+        }
     }
 
     class HomeWorkAdapter extends RecyclerView.Adapter<HomeWorkAdapter.MyViewHolder> {

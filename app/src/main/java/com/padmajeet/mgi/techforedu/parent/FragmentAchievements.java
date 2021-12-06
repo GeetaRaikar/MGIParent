@@ -43,22 +43,21 @@ import cn.pedant.SweetAlert.SweetAlertDialog;
  * A simple {@link Fragment} subclass.
  */
 public class FragmentAchievements extends Fragment {
-    Gson gson;
-    View view;
-    String created_Date =null;
-    FirebaseFirestore db= FirebaseFirestore.getInstance();
-    CollectionReference achievementCollectionRef = db.collection("Achievement");
+    private Gson gson;
+    private View view;
+    private FirebaseFirestore db= FirebaseFirestore.getInstance();
+    private CollectionReference achievementCollectionRef = db.collection("Achievement");
     private ListenerRegistration achievementListener;
-    private ArrayList<String> imageUrlList=new ArrayList<>();
     private ArrayList<Achievement> achievementList=new ArrayList<>();
     private LinearLayout llNoList;
     private Student loggedInUserStudent;
-    private String academicYearId;
+    //private String academicYearId;
     private Achievement achievement;
     private RecyclerView rvAchievement;
     private RecyclerView.Adapter achievementAdapter;
     private RecyclerView.LayoutManager layoutManager;
     private Parent loggedInUser;
+    private SweetAlertDialog pDialog;
 
     public FragmentAchievements() {
         // Required empty public constructor
@@ -70,9 +69,10 @@ public class FragmentAchievements extends Fragment {
         gson = Utility.getGson();
         String studentJson = sessionManager.getString("loggedInUserStudent");
         loggedInUserStudent = gson.fromJson(studentJson, Student.class);
-        String parntJson = sessionManager.getString("loggedInUser");
-        loggedInUser = gson.fromJson(parntJson, Parent.class);
-        academicYearId = sessionManager.getString("academicYearId");
+        String parentJson = sessionManager.getString("loggedInUser");
+        loggedInUser = gson.fromJson(parentJson, Parent.class);
+        //academicYearId = sessionManager.getString("academicYearId");
+        pDialog = Utility.createSweetAlertDialog(getContext());
     }
 
     @Override
@@ -93,59 +93,59 @@ public class FragmentAchievements extends Fragment {
         if(achievementList.size()!=0){
             achievementList.clear();
         }
-        final SweetAlertDialog pDialog;
-        pDialog = Utility.createSweetAlertDialog(getContext());
-        pDialog.show();
-
-        achievementListener = achievementCollectionRef
-                .whereEqualTo("instituteId",loggedInUser.getInstituteId())
-                .orderBy("createdDate", Query.Direction.DESCENDING)
-                .addSnapshotListener(new EventListener<QuerySnapshot>() {
-                    @Override
-                    public void onEvent(@Nullable QuerySnapshot queryDocumentSnapshots, @Nullable FirebaseFirestoreException e) {
-                        if (e != null) {
-                            return;
-                        }
-                        if(achievementList.size()!=0){
-                            achievementList.clear();
-                        }
-                        if (pDialog != null) {
-                            pDialog.dismiss();
-                        }
-                        for (DocumentSnapshot document:queryDocumentSnapshots.getDocuments()) {
-                            achievement = document.toObject(Achievement.class);
-                            achievement.setId(document.getId());
-                            if(achievement.getVisibility().equalsIgnoreCase("AP") || achievement.getVisibility().equalsIgnoreCase("ALL")){
-                                achievementList.add(achievement);
-                            }else{
-                                if(achievement.getVisibility().equalsIgnoreCase("P")) {
-                                    if(achievement.getBatchIdList().contains(loggedInUserStudent.getCurrentBatchId())){
-                                        achievementList.add(achievement);
+        if(loggedInUser != null) {
+            if (pDialog != null && !pDialog.isShowing()) {
+                pDialog.show();
+            }
+            achievementListener = achievementCollectionRef
+                    .whereEqualTo("instituteId", loggedInUser.getInstituteId())
+                    .orderBy("createdDate", Query.Direction.DESCENDING)
+                    .addSnapshotListener(new EventListener<QuerySnapshot>() {
+                        @Override
+                        public void onEvent(@Nullable QuerySnapshot queryDocumentSnapshots, @Nullable FirebaseFirestoreException e) {
+                            if (e != null) {
+                                return;
+                            }
+                            if (achievementList.size() != 0) {
+                                achievementList.clear();
+                            }
+                            if (pDialog != null && pDialog.isShowing()) {
+                                pDialog.dismiss();
+                            }
+                            for (DocumentSnapshot document : queryDocumentSnapshots.getDocuments()) {
+                                achievement = document.toObject(Achievement.class);
+                                achievement.setId(document.getId());
+                                if (achievement.getVisibility().equalsIgnoreCase("AP") || achievement.getVisibility().equalsIgnoreCase("ALL")) {
+                                    achievementList.add(achievement);
+                                } else {
+                                    if (achievement.getVisibility().equalsIgnoreCase("P")) {
+                                        if (achievement.getBatchIdList().contains(loggedInUserStudent.getCurrentBatchId())) {
+                                            achievementList.add(achievement);
+                                        }
                                     }
                                 }
                             }
-                        }
-                        if(achievementList.size()!=0) {
-                            System.out.println("achievementList -"+achievementList.size());
-                            achievementAdapter = new AchievementAdapter(achievementList);
-                            rvAchievement.setAdapter(achievementAdapter);
-                            rvAchievement.setVisibility(View.VISIBLE);
-                            llNoList.setVisibility(View.GONE);
-                            if(pDialog!=null && pDialog.isShowing()){
-                                pDialog.dismiss();
+                            if (achievementList.size() != 0) {
+                                //System.out.println("achievementList -"+achievementList.size());
+                                achievementAdapter = new AchievementAdapter(achievementList);
+                                rvAchievement.setAdapter(achievementAdapter);
+                                rvAchievement.setVisibility(View.VISIBLE);
+                                llNoList.setVisibility(View.GONE);
+                                if (pDialog != null && pDialog.isShowing()) {
+                                    pDialog.dismiss();
+                                }
+                            } else {
+                                rvAchievement.setVisibility(View.GONE);
+                                llNoList.setVisibility(View.VISIBLE);
+                                if (pDialog != null && pDialog.isShowing()) {
+                                    pDialog.dismiss();
+                                }
                             }
                         }
-                        else{
-                            rvAchievement.setVisibility(View.GONE);
-                            llNoList.setVisibility(View.VISIBLE);
-                            if(pDialog!=null && pDialog.isShowing()){
-                                pDialog.dismiss();
-                            }
-                        }
-                    }
-                });
-        // [END get_all_users]
-
+                    });
+        }else{
+            // loggedInUser is not available.
+        }
 
     }
 

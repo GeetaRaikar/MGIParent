@@ -30,6 +30,7 @@ public class Student {
 	private String creatorType;
 	private String modifierType;
 	private String token; //new
+	private String emergencyContact;
 
 	@Exclude
 	public String getId() {
@@ -222,5 +223,13 @@ public class Student {
 
 	public void setToken(String token) {
 		this.token = token;
+	}
+
+	public String getEmergencyContact() {
+		return emergencyContact;
+	}
+
+	public void setEmergencyContact(String emergencyContact) {
+		this.emergencyContact = emergencyContact;
 	}
 }

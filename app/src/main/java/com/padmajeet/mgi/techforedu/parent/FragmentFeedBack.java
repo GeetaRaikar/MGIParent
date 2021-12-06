@@ -50,14 +50,13 @@ import cn.pedant.SweetAlert.SweetAlertDialog;
  * A simple {@link Fragment} subclass.
  */
 public class FragmentFeedBack extends Fragment {
-    View view=null;
+    private View view=null;
     private Gson gson;
     private String loggedInUserId;
     private Student loggedInUserStudent;
     private FirebaseFirestore db= FirebaseFirestore.getInstance();
     private CollectionReference feedBackCollectionRef=db.collection("Feedback");
     private CollectionReference feedBackCategoryCollectionRef=db.collection("FeedbackCategory");
-    private DocumentReference feedBackCategoryDocRef;
     private Feedback feedback;
     private FeedbackCategory feedbackCategory;
     private List<Feedback> feedBackList=new ArrayList<>();
@@ -71,10 +70,13 @@ public class FragmentFeedBack extends Fragment {
     private EditText etFeedBack;
     private ImageView ivSubmit;
     private ArrayAdapter<String> adaptor;
-    String instituteId;
-    List<String> nameList = new ArrayList<>();
-    int []circles = {R.drawable.circle_blue_filled,R.drawable.circle_brown_filled,R.drawable.circle_green_filled,R.drawable.circle_pink_filled,R.drawable.circle_orange_filled};
-    Fragment currentFragment;
+    private String instituteId;
+    private List<String> nameList = new ArrayList<>();
+    private int []circles = {R.drawable.circle_blue_filled,R.drawable.circle_brown_filled,R.drawable.circle_green_filled,R.drawable.circle_pink_filled,R.drawable.circle_orange_filled};
+    private Fragment currentFragment;
+    private SweetAlertDialog pDialog;
+    private FloatingActionButton fab;
+
     public FragmentFeedBack() {
         // Required empty public constructor
     }
@@ -88,9 +90,9 @@ public class FragmentFeedBack extends Fragment {
         String studentJson = sessionManager.getString("loggedInUserStudent");
         loggedInUserStudent = gson.fromJson(studentJson, Student.class);
         instituteId = sessionManager.getString("instituteId");
+        pDialog = Utility.createSweetAlertDialog(getContext());
         currentFragment = this;
     }
-
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -106,7 +108,7 @@ public class FragmentFeedBack extends Fragment {
         getFeedBackCategory();
         getFeedBack();
 
-        FloatingActionButton fab = view.findViewById(R.id.addFeedback);
+        fab = view.findViewById(R.id.addFeedback);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -177,18 +179,17 @@ public class FragmentFeedBack extends Fragment {
         }
     }
 
-
     private void addFeedback() {
         bottomSheetDialog.dismiss();
-        final SweetAlertDialog pDialog;
-        pDialog = Utility.createSweetAlertDialog(getContext());
-        pDialog.show();
+        if (pDialog != null && !pDialog.isShowing()) {
+            pDialog.show();
+        }
         feedBackCollectionRef
                 .add(feedback)
                 .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
                     @Override
                     public void onSuccess(DocumentReference documentReference) {
-                        if (pDialog != null) {
+                        if (pDialog != null && pDialog.isShowing()) {
                             pDialog.dismiss();
                         }
                         SweetAlertDialog dialog = new SweetAlertDialog(getContext(), SweetAlertDialog.SUCCESS_TYPE)
@@ -212,6 +213,9 @@ public class FragmentFeedBack extends Fragment {
                     @Override
                     public void onFailure(@NonNull Exception e) {
                         Toast.makeText(getContext(), "Error", Toast.LENGTH_LONG).show();
+                        if (pDialog != null && pDialog.isShowing()) {
+                            pDialog.dismiss();
+                        }
                     }
                 });
         // [END add_document]
@@ -219,71 +223,87 @@ public class FragmentFeedBack extends Fragment {
     }
 
     private void getFeedBackCategory(){
-        feedBackCategoryCollectionRef
-                .whereEqualTo("instituteId",instituteId)
-                .get()
-                .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
-                    @Override
-                    public void onComplete(@NonNull Task<QuerySnapshot> task) {
-                        if (task.isSuccessful()) {
-                            for (QueryDocumentSnapshot document : task.getResult()) {
-                                feedbackCategory = document.toObject(FeedbackCategory.class);
-                                feedbackCategory.setId(document.getId());
-                                System.out.println("FeedbackCategory -" + feedbackCategory.getCategory());
-                                feedbackCategoryList.add(feedbackCategory);
-                                nameList.add(feedbackCategory.getCategory());
+        if(instituteId != null) {
+            if(pDialog != null && !pDialog.isShowing()){
+                pDialog.show();
+            }
+            feedBackCategoryCollectionRef
+                    .whereEqualTo("instituteId", instituteId)
+                    .get()
+                    .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+                        @Override
+                        public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                            if(pDialog != null && pDialog.isShowing()){
+                                pDialog.dismiss();
                             }
-                        } else {
+                            if (task.isSuccessful()) {
+                                for (QueryDocumentSnapshot document : task.getResult()) {
+                                    feedbackCategory = document.toObject(FeedbackCategory.class);
+                                    feedbackCategory.setId(document.getId());
+                                    System.out.println("FeedbackCategory -" + feedbackCategory.getCategory());
+                                    feedbackCategoryList.add(feedbackCategory);
+                                    nameList.add(feedbackCategory.getCategory());
+                                }
+                                if(feedbackCategoryList.size() == 0){
+                                    fab.hide();
+                                }else{
+                                    fab.show();
+                                }
+                            } else {
+                                fab.show();
+                            }
                         }
-                    }
-                });
-        // [END get_all_users]
+                    });
+        }else{
+            //instituteId == null
+        }
 
     }
     private void getFeedBack() {
-        if(feedBackList.size()!=0){
-            feedBackList.clear();
-        }
-        final SweetAlertDialog pDialog;
-        pDialog = Utility.createSweetAlertDialog(getContext());
-        pDialog.show();
-        //TODO
-        feedBackCollectionRef
-                .whereEqualTo("batchId",loggedInUserStudent.getCurrentBatchId())
-                .whereEqualTo("reviewerId",loggedInUserId)
-                .orderBy("createdDate", Query.Direction.DESCENDING)
-                .get()
-                .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
-                    @Override
-                    public void onComplete(@NonNull Task<QuerySnapshot> task) {
-                        System.out.println("Feedback  -"+task.getResult().size());
-                        if (task.isSuccessful()) {
-                            if (pDialog != null) {
+        if(loggedInUserStudent != null && loggedInUserId != null) {
+            if (pDialog != null && !pDialog.isShowing()) {
+                pDialog.show();
+            }
+            if (feedBackList.size() != 0) {
+                feedBackList.clear();
+            }
+            feedBackCollectionRef
+                    .whereEqualTo("batchId", loggedInUserStudent.getCurrentBatchId())
+                    .whereEqualTo("reviewerId", loggedInUserId)
+                    .orderBy("createdDate", Query.Direction.DESCENDING)
+                    .get()
+                    .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+                        @Override
+                        public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                            System.out.println("Feedback  -" + task.getResult().size());
+                            if (pDialog != null && pDialog.isShowing()) {
                                 pDialog.dismiss();
                             }
-                            for (QueryDocumentSnapshot document : task.getResult()) {
-                                feedback = document.toObject(Feedback.class);
-                                feedback.setId(document.getId());
-                                feedBackList.add(feedback);
-                            }
-                            System.out.println("FeedBack  -" + feedBackList.size());
-                            if (feedBackList.size() != 0) {
-                                feedBackAdapter = new FeedBackAdapter(feedBackList);
-                                rvFeedBack.setAdapter(feedBackAdapter);
-                                rvFeedBack.setVisibility(View.VISIBLE);
-                                llNoList.setVisibility(View.GONE);
+                            if (task.isSuccessful()) {
+                                for (QueryDocumentSnapshot document : task.getResult()) {
+                                    feedback = document.toObject(Feedback.class);
+                                    feedback.setId(document.getId());
+                                    feedBackList.add(feedback);
+                                }
+                                System.out.println("FeedBack  -" + feedBackList.size());
+                                if (feedBackList.size() != 0) {
+                                    feedBackAdapter = new FeedBackAdapter(feedBackList);
+                                    rvFeedBack.setAdapter(feedBackAdapter);
+                                    rvFeedBack.setVisibility(View.VISIBLE);
+                                    llNoList.setVisibility(View.GONE);
+                                } else {
+                                    rvFeedBack.setVisibility(View.GONE);
+                                    llNoList.setVisibility(View.VISIBLE);
+                                }
                             } else {
                                 rvFeedBack.setVisibility(View.GONE);
                                 llNoList.setVisibility(View.VISIBLE);
                             }
-                        } else {
-                            rvFeedBack.setVisibility(View.GONE);
-                            llNoList.setVisibility(View.VISIBLE);
                         }
-                    }
-                });
-        // [END get_all_users]
-
+                    });
+        }else{
+            //loggedInUserId , loggedInUserStudent == null
+        }
     }
 
     class FeedBackAdapter extends RecyclerView.Adapter<FeedBackAdapter.MyViewHolder> {

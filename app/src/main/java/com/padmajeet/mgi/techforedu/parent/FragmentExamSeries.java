@@ -1,32 +1,16 @@
 package com.padmajeet.mgi.techforedu.parent;
 
-
-import android.content.Context;
-import android.os.AsyncTask;
 import android.os.Bundle;
-import android.text.TextUtils;
-import android.util.DisplayMetrics;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.BaseExpandableListAdapter;
-import android.widget.ExpandableListView;
-import android.widget.ExpandableListView.OnChildClickListener;
-import android.widget.ExpandableListView.OnGroupClickListener;
-import android.widget.ExpandableListView.OnGroupCollapseListener;
-import android.widget.ExpandableListView.OnGroupExpandListener;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.TableLayout;
-import android.widget.TableRow;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
-import com.bumptech.glide.Glide;
-import com.bumptech.glide.request.RequestOptions;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
@@ -39,20 +23,15 @@ import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.gson.Gson;
-import com.padmajeet.mgi.techforedu.parent.model.AcademicYear;
 import com.padmajeet.mgi.techforedu.parent.model.Exam;
 import com.padmajeet.mgi.techforedu.parent.model.ExamSeries;
-import com.padmajeet.mgi.techforedu.parent.model.Institute;
-import com.padmajeet.mgi.techforedu.parent.model.Parent;
 import com.padmajeet.mgi.techforedu.parent.model.Student;
 import com.padmajeet.mgi.techforedu.parent.model.Subject;
 import com.padmajeet.mgi.techforedu.parent.util.SessionManager;
 import com.padmajeet.mgi.techforedu.parent.util.Utility;
 
-import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -79,10 +58,7 @@ public class FragmentExamSeries extends Fragment {
     private List<Subject> subjectList = new ArrayList<>();
     private Gson gson;
     private Student loggedInUserStudent;
-    private Parent loggedInUser;
-    private String academicYearId,instituteId;
-    private DisplayMetrics metrics;
-    private int width;
+    private String academicYearId;
     private SweetAlertDialog pDialog;
     private TextView tvExamSeriesName,tvExamSeriesDate;
 
@@ -94,48 +70,53 @@ public class FragmentExamSeries extends Fragment {
     @Override
     public void onStart() {
         super.onStart();
-        subjectListener=subjectCollectionRef
-                .whereEqualTo("batchId", loggedInUserStudent.getCurrentBatchId())
-                .orderBy("createdDate", Query.Direction.ASCENDING)
-                .addSnapshotListener(new EventListener<QuerySnapshot>() {
-                    @Override
-                    public void onEvent(@Nullable QuerySnapshot queryDocumentSnapshots, @Nullable FirebaseFirestoreException e) {
-                        if (e != null) {
-                            return;
+        if(loggedInUserStudent != null) {
+            if (pDialog != null && !pDialog.isShowing()) {
+                pDialog.show();
+            }
+            subjectListener = subjectCollectionRef
+                    .whereEqualTo("batchId", loggedInUserStudent.getCurrentBatchId())
+                    .orderBy("createdDate", Query.Direction.ASCENDING)
+                    .addSnapshotListener(new EventListener<QuerySnapshot>() {
+                        @Override
+                        public void onEvent(@Nullable QuerySnapshot queryDocumentSnapshots, @Nullable FirebaseFirestoreException e) {
+                            if (e != null) {
+                                return;
+                            }
+                            if (pDialog != null && pDialog.isShowing()) {
+                                pDialog.dismiss();
+                            }
+                            if (subjectList.size() != 0) {
+                                subjectList.clear();
+                            }
+                            for (DocumentSnapshot document : queryDocumentSnapshots.getDocuments()) {
+                                // Log.d(TAG, document.getId()document.getId() + " => " + document.getData());
+                                Subject subject = document.toObject(Subject.class);
+                                subject.setId(document.getId());
+                                subjectList.add(subject);
+                            }
                         }
-                        if (pDialog != null) {
-                            pDialog.dismiss();
-                        }
-                        if (subjectList.size() != 0) {
-                            subjectList.clear();
-                        }
-                        for (DocumentSnapshot document:queryDocumentSnapshots.getDocuments()) {
-                            // Log.d(TAG, document.getId()document.getId() + " => " + document.getData());
-                            Subject subject = document.toObject(Subject.class);
-                            subject.setId(document.getId());
-                            subjectList.add(subject);
-                        }
-                    }
-                });
+                    });
+        }else{
+            //loggedInUserStudent == null
+        }
     }
 
     @Override
     public void onStop() {
         super.onStop();
+        examSeriesListener.remove();
+        subjectListener.remove();
     }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         SessionManager sessionManager = new SessionManager(getContext());
-        String parentJson = sessionManager.getString("loggedInUser");
         gson = Utility.getGson();
         String studentJson = sessionManager.getString("loggedInUserStudent");
         loggedInUserStudent = gson.fromJson(studentJson, Student.class);
-        String loggedInUserJson = sessionManager.getString("loggedInUser");
-        loggedInUser = gson.fromJson(loggedInUserJson,Parent.class);
         academicYearId = sessionManager.getString("academicYearId");
-        instituteId=sessionManager.getString("instituteId");
     }
 
     @Override
@@ -156,82 +137,98 @@ public class FragmentExamSeries extends Fragment {
         // preparing list data
         getExamSeriesOfBatch();
     }
-    public int GetDipsFromPixel(float pixels)
-    {
-        // Get the screen's density scale
-        final float scale = getResources().getDisplayMetrics().density;
-        // Convert the dps to pixels, based on density scale
-        return (int) (pixels * scale + 0.5f);
-    }
     private void  getExamSeriesOfBatch() {
-        examSeriesListener = examSeriesCollectionRef
-                .whereEqualTo("academicYearId", academicYearId)
-                .whereEqualTo("batchId", loggedInUserStudent.getCurrentBatchId())
-                .orderBy("createdDate", Query.Direction.DESCENDING)
-                .addSnapshotListener(new EventListener<QuerySnapshot>() {
-                    @Override
-                    public void onEvent(@Nullable QuerySnapshot queryDocumentSnapshots, @Nullable FirebaseFirestoreException e) {
-                        if (e != null) {
-                            return;
+        if(academicYearId != null && loggedInUserStudent != null) {
+            if (pDialog != null && !pDialog.isShowing()) {
+                pDialog.show();
+            }
+            examSeriesListener = examSeriesCollectionRef
+                    .whereEqualTo("academicYearId", academicYearId)
+                    .whereEqualTo("batchId", loggedInUserStudent.getCurrentBatchId())
+                    .orderBy("createdDate", Query.Direction.DESCENDING)
+                    .addSnapshotListener(new EventListener<QuerySnapshot>() {
+                        @Override
+                        public void onEvent(@Nullable QuerySnapshot queryDocumentSnapshots, @Nullable FirebaseFirestoreException e) {
+                            if (e != null) {
+                                return;
+                            }
+                            if (examSeriesList.size() != 0) {
+                                examSeriesList.clear();
+                            }
+                            if (pDialog != null && pDialog.isShowing()) {
+                                pDialog.dismiss();
+                            }
+                            for (DocumentSnapshot documentSnapshot : queryDocumentSnapshots.getDocuments()) {
+                                // Log.d(TAG, document.getId()document.getId() + " => " + document.getData());
+                                ExamSeries examSeries = documentSnapshot.toObject(ExamSeries.class);
+                                examSeries.setId(documentSnapshot.getId());
+                                examSeriesList.add(examSeries);
+                            }
+                            if (examSeriesList.size() != 0) {
+                                getAllExamOfExamSeriesOfBatch();
+                            } else {
+                                rvExamSeries.setVisibility(View.GONE);
+                                llNoList.setVisibility(View.VISIBLE);
+                            }
                         }
-                        if (examSeriesList.size() != 0) {
-                            examSeriesList.clear();
-                        }
-                        for (DocumentSnapshot documentSnapshot:queryDocumentSnapshots.getDocuments()){
-                            // Log.d(TAG, document.getId()document.getId() + " => " + document.getData());
-                            ExamSeries examSeries = documentSnapshot.toObject(ExamSeries.class);
-                            examSeries.setId(documentSnapshot.getId());
-                            examSeriesList.add(examSeries);
-                        }
-                        if (examSeriesList.size() != 0) {
-                            getAllExamOfExamSeriesOfBatch();
-                        } else {
-                            rvExamSeries.setVisibility(View.GONE);
-                            llNoList.setVisibility(View.VISIBLE);
-                        }
-                    }
-                });
+                    });
+        }else{
+            //loggedInUserStudent, academicYearId == null
+        }
     }
     public void getAllExamOfExamSeriesOfBatch(){
-        examCollectionRef
-                .whereEqualTo("batchId", loggedInUserStudent.getCurrentBatchId())
-                .orderBy("date", Query.Direction.ASCENDING)
-                .get()
-                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
-                    @Override
-                    public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
-                        if(examList.size()>0) {
-                            examList.clear();
-                        }
-                        for (DocumentSnapshot document : queryDocumentSnapshots.getDocuments()) {
-                            Exam exam = document.toObject(Exam.class);
-                            exam.setId(document.getId());
-                            examList.add(exam);
-                        }
-                        if(examList.size() > 0){
-                            for(Exam ex:examList) {
-                                for (Subject sub : subjectList) {
-                                    if(ex.getSubjectId().equals(sub.getId())){
-                                        ex.setSubjectId(sub.getName());
-                                        break;
+        if(loggedInUserStudent != null) {
+            if (pDialog != null && !pDialog.isShowing()) {
+                pDialog.show();
+            }
+            examCollectionRef
+                    .whereEqualTo("batchId", loggedInUserStudent.getCurrentBatchId())
+                    .orderBy("date", Query.Direction.ASCENDING)
+                    .get()
+                    .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+                        @Override
+                        public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+                            if (examList.size() > 0) {
+                                examList.clear();
+                            }
+                            if (pDialog != null && pDialog.isShowing()) {
+                                pDialog.dismiss();
+                            }
+                            for (DocumentSnapshot document : queryDocumentSnapshots.getDocuments()) {
+                                Exam exam = document.toObject(Exam.class);
+                                exam.setId(document.getId());
+                                examList.add(exam);
+                            }
+                            if (examList.size() > 0) {
+                                for (Exam ex : examList) {
+                                    for (Subject sub : subjectList) {
+                                        if (ex.getSubjectId().equals(sub.getId())) {
+                                            ex.setSubjectId(sub.getName());
+                                            break;
+                                        }
                                     }
                                 }
+                                examSeriesAdapter = new ExamSeriesAdapter(examSeriesList);
+                                rvExamSeries.setAdapter(examSeriesAdapter);
+                                rvExamSeries.setVisibility(View.VISIBLE);
+                                llNoList.setVisibility(View.GONE);
+                            } else {
+                                rvExamSeries.setVisibility(View.GONE);
+                                llNoList.setVisibility(View.VISIBLE);
                             }
-                            examSeriesAdapter = new ExamSeriesAdapter(examSeriesList);
-                            rvExamSeries.setAdapter(examSeriesAdapter);
-                            rvExamSeries.setVisibility(View.VISIBLE);
-                            llNoList.setVisibility(View.GONE);
-                        }else {
-                            rvExamSeries.setVisibility(View.GONE);
-                            llNoList.setVisibility(View.VISIBLE);
                         }
-                    }
-                })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                    }
-                });
+                    })
+                    .addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            if (pDialog != null && pDialog.isShowing()) {
+                                pDialog.dismiss();
+                            }
+                        }
+                    });
+        }else{
+            //loggedInUserStudent == null
+        }
     }
     BottomSheetDialog bottomSheetDialog;
     class ExamSeriesAdapter extends RecyclerView.Adapter<ExamSeriesAdapter.MyViewHolder> {
@@ -239,7 +236,6 @@ public class FragmentExamSeries extends Fragment {
 
         public class MyViewHolder extends RecyclerView.ViewHolder {
             public TextView tvESName,tvESDate,tvStatus,tvDetails;
-            public TableLayout tblExam;
             public MyViewHolder(View view) {
                 super(view);
                 tvESName = view.findViewById(R.id.tvESName);
@@ -367,5 +363,6 @@ public class FragmentExamSeries extends Fragment {
             return examForExamSeries.size();
         }
     }
+
 
 }
