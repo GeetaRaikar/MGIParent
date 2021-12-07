@@ -260,21 +260,33 @@ public class FragmentExamSeries extends Fragment {
         public void onBindViewHolder(MyViewHolder holder, final int position) {
             final ExamSeries examSeries = examSeriesList.get(position);
             holder.tvESName.setText(""+examSeries.getName());
-            String date=Utility.formatDateToString(examSeries.getFromDate().getTime());
-            if(examSeries.getToDate() != null){
-                date = date + " to " +Utility.formatDateToString(examSeries.getToDate().getTime());
-            }
-            holder.tvESDate.setText(""+date);
-            if(examSeries.getToDate().getTime() > new Date().getTime()){
-                holder.tvStatus.setVisibility(View.GONE);
-            }else{
-                holder.tvStatus.setVisibility(View.VISIBLE);
+            if(examSeries.getFromDate() != null) {
+                String date = Utility.formatDateToString(examSeries.getFromDate().getTime());
+                if (examSeries.getToDate() != null) {
+                    date = date + " to " + Utility.formatDateToString(examSeries.getToDate().getTime());
+                }
+                holder.tvESDate.setText("" + date);
+                if (examSeries.getToDate().getTime() > new Date().getTime()) {
+                    holder.tvStatus.setVisibility(View.GONE);
+                } else {
+                    holder.tvStatus.setVisibility(View.VISIBLE);
+                }
             }
             holder.tvDetails.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    onCreateBottomSheet(examSeries);
-                    bottomSheetDialog.show();
+                    List<Exam> examForExamSeries = new ArrayList<>();
+                    for (Exam exam:examList){
+                        if(examSeries.getId().equals(exam.getExamSeriesId())) {
+                            examForExamSeries.add(exam);
+                        }
+                    }
+                    if(examForExamSeries.size() > 0){
+                        onCreateBottomSheet(examSeries,examForExamSeries);
+                        bottomSheetDialog.show();
+                    }else{
+                        bottomSheetDialog.hide();
+                    }
                 }
             });
         }
@@ -285,7 +297,7 @@ public class FragmentExamSeries extends Fragment {
         }
     }
 
-    public void onCreateBottomSheet(ExamSeries examSeries){
+    public void onCreateBottomSheet(ExamSeries examSeries,List<Exam> examForExamSeries){
         if(bottomSheetDialog == null){
             View viewBottom = LayoutInflater.from(getContext()).inflate(R.layout.bottom_sheet_view_exam, null);
             bottomSheetDialog = new BottomSheetDialog(getContext());
@@ -294,22 +306,18 @@ public class FragmentExamSeries extends Fragment {
             tvExamSeriesDate = viewBottom.findViewById(R.id.tvExamSeriesDate);
             System.out.println("examSeries "+examSeries.getName());
             tvExamSeriesName.setText(""+examSeries.getName());
-            String date=Utility.formatDateToString(examSeries.getFromDate().getTime());
-            if(examSeries.getToDate() != null){
-                date = date + " to " +Utility.formatDateToString(examSeries.getToDate().getTime());
+            if(examSeries.getFromDate() != null) {
+                String date = Utility.formatDateToString(examSeries.getFromDate().getTime());
+                if (examSeries.getToDate() != null) {
+                    date = date + " to " + Utility.formatDateToString(examSeries.getToDate().getTime());
+                }
+                tvExamSeriesDate.setText("" + date);
             }
-            tvExamSeriesDate.setText(""+date);
             RecyclerView rvExam = viewBottom.findViewById(R.id.rvExam);
             TextView tvNoData = viewBottom.findViewById(R.id.tvNoData);
             RecyclerView.LayoutManager layoutManagerForExam = new LinearLayoutManager(getContext());
             rvExam.setLayoutManager(layoutManagerForExam);
             RecyclerView.Adapter examAdapter;
-            List<Exam> examForExamSeries = new ArrayList<>();
-            for (Exam exam:examList){
-                if(examSeries.getId().equals(exam.getExamSeriesId())) {
-                    examForExamSeries.add(exam);
-                }
-            }
             if(examForExamSeries.size() > 0){
                 examAdapter = new ExamAdapter(examForExamSeries);
                 rvExam.setAdapter(examAdapter);

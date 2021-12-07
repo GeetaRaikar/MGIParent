@@ -62,7 +62,7 @@ public class FragmentEventDetails extends Fragment {
     private DocumentReference batchDocRef;
     private HashMap<String,String> responseMap=new HashMap<String,String>();
     private SessionManager sessionManager;
-    private Parent loggedInUser;
+    private String loggedInUserId;
     private String url,fileName,fileName1;
     private String[] fileName2;
 
@@ -77,8 +77,7 @@ public class FragmentEventDetails extends Fragment {
         sessionManager = new SessionManager(getContext());
         Gson gson = Utility.getGson();
         selectedEvent = gson.fromJson(selectedEventJson,Event.class);
-        String parentJson = sessionManager.getString("loggedInUser");
-        loggedInUser = gson.fromJson(parentJson, Parent.class);
+        loggedInUserId= sessionManager.getString("loggedInUserId");
         if(selectedEvent.getParentResponses().size() > 0) {
             responseMap.putAll(selectedEvent.getParentResponses());
         }
@@ -112,8 +111,8 @@ public class FragmentEventDetails extends Fragment {
         if(selectedEvent.getCategory().equals("R")){
             llEventResponse.setVisibility(View.VISIBLE);
             //already response is taken
-            if (responseMap.containsKey(loggedInUser.getId())) {
-                response=responseMap.get(loggedInUser.getId());
+            if (responseMap.containsKey(loggedInUserId)) {
+                response=responseMap.get(loggedInUserId);
                 System.out.println("responseMap"+responseMap);
                 System.out.println("response"+response);
                 btnSaveResponse.setVisibility(View.GONE);
@@ -218,7 +217,7 @@ public class FragmentEventDetails extends Fragment {
                     Toast.makeText(getContext(), "Please select any one of above response", Toast.LENGTH_SHORT).show();
                     return;
                 }
-                responseMap.put(loggedInUser.getId(),response);
+                responseMap.put(loggedInUserId,response);
                 selectedEvent.setParentResponses(responseMap);
                 eventCollectionRef.document(selectedEvent.getId())
                         .set(selectedEvent)
@@ -245,7 +244,7 @@ public class FragmentEventDetails extends Fragment {
         btnUpdateResponse.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                responseMap.put(loggedInUser.getId(),response);
+                responseMap.put(loggedInUserId,response);
                 selectedEvent.setParentResponses(responseMap);
                 eventCollectionRef.document(selectedEvent.getId())
                         .set(selectedEvent)

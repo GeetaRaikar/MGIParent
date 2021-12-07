@@ -79,6 +79,7 @@
                     android:layout_weight="1"
                     android:gravity="right|end"
                     android:text="Exam is over"
+                    android:visibility="gone"
                     android:textColor="@color/colorRed"/>
             </LinearLayout>
         </LinearLayout>
