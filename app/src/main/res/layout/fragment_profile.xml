@@ -188,7 +188,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:clickable="true"
-                android:src="@drawable/ic_edit"/>
+                android:src="@drawable/ic_edit_forever"
+                android:tint="@color/colorPrimary"/>
         </LinearLayout>
 
 
@@ -198,7 +199,8 @@
             android:layout_marginTop="10dp"
             android:orientation="horizontal"
             android:paddingLeft="@dimen/activity_horizontal_margin"
-            android:paddingRight="@dimen/activity_horizontal_margin">
+            android:paddingRight="@dimen/activity_horizontal_margin"
+            android:visibility="gone">
 
             <TextView
                 android:id="@+id/tvFatherNameLabel"
@@ -225,7 +227,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:clickable="true"
-                android:src="@drawable/ic_edit"/>
+                android:src="@drawable/ic_edit_forever"/>
 
         </LinearLayout>
         <!--
@@ -262,7 +264,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:clickable="true"
-                android:src="@drawable/ic_edit"/>
+                android:src="@drawable/ic_edit_forever"/>
 
         </LinearLayout>
         -->
@@ -301,7 +303,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:clickable="true"
-                android:src="@drawable/ic_edit"/>
+                android:src="@drawable/ic_edit_forever"
+                android:tint="@color/colorPrimary"/>
 
         </LinearLayout>
         <TextView
@@ -313,7 +316,7 @@
             android:autoLink="all"
             android:linksClickable="true"
             android:text="Want to reset Password?"
-            android:textColor="@color/colorBlue" />
+            android:textColor="@color/colorPrimary" />
 
         <Button
             android:id="@+id/btUpdateProfile"

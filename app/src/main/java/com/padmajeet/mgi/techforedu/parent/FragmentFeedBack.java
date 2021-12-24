@@ -131,8 +131,6 @@ public class FragmentFeedBack extends Fragment {
             etFeedBack=view.findViewById(R.id.etFeedBack);
 
             if(feedbackCategoryList.size()!=0) {
-
-
                 adaptor = new ArrayAdapter<>(getContext(), android.R.layout.simple_spinner_item, nameList);
                 adaptor.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
                 spFeedBackCategory.setAdapter(adaptor);
@@ -155,9 +153,15 @@ public class FragmentFeedBack extends Fragment {
                 public void onClick(View view) {
                     String strFeedback = etFeedBack.getText().toString().trim();
                     if (TextUtils.isEmpty(strFeedback)) {
-                        etFeedBack.setError("Enter FeedBack");
+                        etFeedBack.setError("Please enter valid note");
                         etFeedBack.requestFocus();
                         return;
+                    }else{
+                        if(Utility.isTextValid(strFeedback)){
+                            etFeedBack.setError("Please enter valid note");
+                            etFeedBack.requestFocus();
+                            return;
+                        }
                     }
                     if(selectedFeedBackCategory!=null) {
                         feedback = new Feedback();
@@ -313,7 +317,7 @@ public class FragmentFeedBack extends Fragment {
         public class MyViewHolder extends RecyclerView.ViewHolder {
             public TextView tvFeedbackCategory, tvFeedback,tvDate,tvSubjectHeader;
             public LinearLayout llImage;
-            public ImageView ivEditNote;
+            public ImageView ivEditNote,ivDeleteNote;
 
             public MyViewHolder(View view) {
                 super(view);
@@ -323,7 +327,7 @@ public class FragmentFeedBack extends Fragment {
                 llImage = view.findViewById(R.id.llImage);
                 tvSubjectHeader= view.findViewById(R.id.tvSubjectHeader);
                 ivEditNote = view.findViewById(R.id.ivEditNote);
-
+                ivDeleteNote = view.findViewById(R.id.ivDeleteNote);
             }
         }
 
@@ -392,7 +396,6 @@ public class FragmentFeedBack extends Fragment {
                     SweetAlertDialog dialog = new SweetAlertDialog(getContext(), SweetAlertDialog.NORMAL_TYPE)
                             .setConfirmText("Update")
                             .setCustomView(dialogLayout)
-
                             .setCancelButton("Cancel", new SweetAlertDialog.OnSweetClickListener() {
                                 @Override
                                 public void onClick(SweetAlertDialog sDialog) {
@@ -402,15 +405,18 @@ public class FragmentFeedBack extends Fragment {
                             .setConfirmClickListener(new SweetAlertDialog.OnSweetClickListener() {
                                 @Override
                                 public void onClick(SweetAlertDialog sDialog) {
-
                                     String updatedNote = etFeedBack.getText().toString().trim();
                                     if(TextUtils.isEmpty(updatedNote)){
-                                        etFeedBack.setError("Please enter the note");
+                                        etFeedBack.setError("Please enter valid note");
                                         etFeedBack.requestFocus();
                                         return;
+                                    }else{
+                                        if(Utility.isTextValid(updatedNote)){
+                                            etFeedBack.setError("Please enter valid note");
+                                            etFeedBack.requestFocus();
+                                            return;
+                                        }
                                     }
-
-
                                     feedBack.setFeedback(updatedNote);
                                     feedBack.setFeedbackCategoryId(updatedFeedbackCategory.getId());
                                     feedBack.setModifiedDate(new Date());
@@ -435,7 +441,45 @@ public class FragmentFeedBack extends Fragment {
                                             }
                                         }
                                     });
+                                }
+                            });
+                    dialog.getWindow().setGravity(Gravity.CENTER);
+                    dialog.setCancelable(false);
+                    dialog.show();
+                }
+            });
 
+            holder.ivDeleteNote.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    SweetAlertDialog dialog = new SweetAlertDialog(getContext(), SweetAlertDialog.WARNING_TYPE)
+                            .setConfirmText("Confirm")
+                            .setContentText("Delete note permanently?")
+                            .setCancelButton("Cancel", new SweetAlertDialog.OnSweetClickListener() {
+                                @Override
+                                public void onClick(SweetAlertDialog sDialog) {
+                                    sDialog.dismissWithAnimation();
+                                }
+                            })
+                            .setConfirmClickListener(new SweetAlertDialog.OnSweetClickListener() {
+                                @Override
+                                public void onClick(SweetAlertDialog sDialog) {
+                                    feedBackCollectionRef.document(feedBack.getId())
+                                            .delete()
+                                            .addOnSuccessListener(new OnSuccessListener<Void>() {
+                                                @Override
+                                                public void onSuccess(Void aVoid) {
+                                                    sDialog.dismissWithAnimation();
+                                                    getFragmentManager().beginTransaction().detach(currentFragment).attach(currentFragment).commit();
+                                                }
+                                            })
+                                            .addOnFailureListener(new OnFailureListener() {
+                                                @Override
+                                                public void onFailure(@NonNull Exception e) {
+                                                    sDialog.dismissWithAnimation();
+                                                    Toast.makeText(getContext(), "Delete unsuccessful", Toast.LENGTH_SHORT).show();
+                                                }
+                                            });
                                 }
                             });
                     dialog.getWindow().setGravity(Gravity.CENTER);

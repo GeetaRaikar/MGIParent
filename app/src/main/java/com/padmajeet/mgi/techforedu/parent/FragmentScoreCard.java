@@ -375,16 +375,19 @@ public class FragmentScoreCard extends Fragment {
         public void onBindViewHolder(MyViewHolder holder, final int position) {
             final ExamSeries examSeries = examSeriesList.get(position);
             holder.tvESName.setText(""+examSeries.getName());
-            String date=Utility.formatDateToString(examSeries.getFromDate().getTime());
-            if(examSeries.getToDate() != null){
-                date = date + " to " +Utility.formatDateToString(examSeries.getToDate().getTime());
+            if(examSeries.getFromDate() != null) {
+                String date = Utility.formatDateToString(examSeries.getFromDate().getTime());
+                if (examSeries.getToDate() != null) {
+                    date = date + " to " + Utility.formatDateToString(examSeries.getToDate().getTime());
+                }
+                holder.tvESDate.setText(""+date);
+                if(examSeries.getToDate().getTime() > new Date().getTime()){
+                    holder.tvStatus.setVisibility(View.GONE);
+                }else{
+                    holder.tvStatus.setVisibility(View.VISIBLE);
+                }
             }
-            holder.tvESDate.setText(""+date);
-            if(examSeries.getToDate().getTime() > new Date().getTime()){
-                holder.tvStatus.setVisibility(View.GONE);
-            }else{
-                holder.tvStatus.setVisibility(View.VISIBLE);
-            }
+
             List<Exam> filterExamList = new ArrayList<>();
             for(Exam exam:examList){
                 if(examSeries.getId().equals(exam.getExamSeriesId())){

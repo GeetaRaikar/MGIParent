@@ -44,10 +44,10 @@ import cn.pedant.SweetAlert.SweetAlertDialog;
 public class FragmentProfile extends Fragment {
     private View view=null;
     private Parent loggedInUser;
-    private EditText etMobileNumber, etFatherName, etMotherName, etEmail, etAddress;
+    private EditText etMobileNumber, etEmail, etAddress;
     private ImageView ivProfilePic;
     private Button btUpdateProfile;
-    boolean isEmailEdited, isFatherNameEdited, isMotherNameEdited, isAddressEdited;
+    boolean isEmailEdited, isAddressEdited;
     private Gson gson;
     private String loggedInUserId;
     private Student loggedInUserStudent;
@@ -86,8 +86,6 @@ public class FragmentProfile extends Fragment {
         ((ActivityHome) getActivity()).getSupportActionBar().setTitle(getString(R.string.profile));
 
         isEmailEdited = false;
-        isFatherNameEdited = false;
-        isMotherNameEdited = false;
         isAddressEdited = false;
         btUpdateProfile = view.findViewById(R.id.btUpdateProfile);
         btUpdateProfile.setVisibility(View.INVISIBLE);
@@ -158,10 +156,6 @@ public class FragmentProfile extends Fragment {
             etEmail.setText(emailId);
         }
 
-        etFatherName = view.findViewById(R.id.etFatherName);
-
-        etFatherName.setText(loggedInUser.getFirstName());
-
         etAddress = view.findViewById(R.id.etAddress);
 
         if (!TextUtils.isEmpty(loggedInUser.getAddress())) {
@@ -178,17 +172,6 @@ public class FragmentProfile extends Fragment {
                 btUpdateProfile.setVisibility(View.VISIBLE);
                 etEmail.setEnabled(true);
                 etEmail.requestFocus();
-            }
-        });
-
-        ImageView ivEditFatherName = view.findViewById(R.id.ivEditFatherName);
-        ivEditFatherName.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                isFatherNameEdited = true;
-                btUpdateProfile.setVisibility(View.VISIBLE);
-                etFatherName.setEnabled(true);
-                etFatherName.requestFocus();
             }
         });
 
@@ -253,16 +236,6 @@ public class FragmentProfile extends Fragment {
                 loggedInUser.setEmailId(updatedEmail);
             }
         }
-        if (isFatherNameEdited) {
-            String updatedFatherName = etFatherName.getText().toString().trim();
-            if (TextUtils.isEmpty(updatedFatherName)) {
-                etFatherName.setError("Enter Father Name");
-                etFatherName.requestFocus();
-                canSave = false;
-            } else {
-                loggedInUser.setFirstName(updatedFatherName);
-            }
-        }
         if (isAddressEdited) {
             String updatedAddress = etAddress.getText().toString().trim();
             if (!TextUtils.isEmpty(updatedAddress)) {
@@ -273,8 +246,6 @@ public class FragmentProfile extends Fragment {
         if (canSave) {
             loggedInUser.setModifiedDate(new Date());
             etEmail.setEnabled(false);
-            etFatherName.setEnabled(false);
-            etMotherName.setEnabled(false);
             etAddress.setEnabled(false);
             btUpdateProfile.setVisibility(View.GONE);
             //Update

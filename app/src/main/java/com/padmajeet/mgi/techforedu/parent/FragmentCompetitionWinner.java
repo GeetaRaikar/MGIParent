@@ -306,16 +306,16 @@ public class FragmentCompetitionWinner extends Fragment {
                 convertView = infalInflater.inflate(R.layout.row_competition_winner, null);
             }
 
-                TextView tvRank = convertView.findViewById(R.id.tvRank);
-                final TextView tvStudentName = convertView.findViewById(R.id.tvStudentName);
-                final LinearLayout llCompetitionWinner = convertView.findViewById(R.id.llCompetitionWinner);
-                final ImageView ivProfilePic = convertView.findViewById(R.id.ivProfilePic);
-                final TextView tvMessage = convertView.findViewById(R.id.tvMessage);
-                tvRank.setText("" + competitionWinner.getRank());
-                studentCollectionRef
-                        .document("/" + competitionWinner.getStudentId())
-                        .get()
-                        .addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
+            TextView tvRank = convertView.findViewById(R.id.tvRank);
+            final TextView tvStudentName = convertView.findViewById(R.id.tvStudentName);
+            final LinearLayout llCompetitionWinner = convertView.findViewById(R.id.llCompetitionWinner);
+            final ImageView ivProfilePic = convertView.findViewById(R.id.ivProfilePic);
+            final TextView tvMessage = convertView.findViewById(R.id.tvMessage);
+            tvRank.setText("" + competitionWinner.getRank());
+            studentCollectionRef
+                    .document("/" + competitionWinner.getStudentId())
+                    .get()
+                    .addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
                             @Override
                             public void onSuccess(DocumentSnapshot documentSnapshot) {
                                 student = documentSnapshot.toObject(Student.class);
@@ -335,8 +335,7 @@ public class FragmentCompetitionWinner extends Fragment {
                                         .into(ivProfilePic);
                             }
                         })
-
-                        .addOnFailureListener(new OnFailureListener() {
+                    .addOnFailureListener(new OnFailureListener() {
                             @Override
                             public void onFailure(@NonNull Exception e) {
 
@@ -348,11 +347,14 @@ public class FragmentCompetitionWinner extends Fragment {
         @Override
         public int getChildrenCount(int groupPosition) {
             if(this._listDataChild.get(this._listDataHeader.get(groupPosition)) == null){
-                System.out.println("competitionWinner ");
+                System.out.println("competitionWinner null");
                 return 0;
             }else{
-                return this._listDataChild.get(this._listDataHeader.get(groupPosition))
-                        .size();
+                System.out.println("Size "+this._listDataChild.get(this._listDataHeader.get(groupPosition)).size());
+                /*if(this._listDataChild.get(this._listDataHeader.get(groupPosition)).size() == 0){
+                    llNoCompetitionWinner
+                }*/
+                return this._listDataChild.get(this._listDataHeader.get(groupPosition)).size();
             }
         }
 
@@ -386,6 +388,7 @@ public class FragmentCompetitionWinner extends Fragment {
             }
             TextView tvName = convertView.findViewById(R.id.tvName);
             TextView tvDate = convertView.findViewById(R.id.tvDate);
+            TextView tvNoCompetitionWinner = convertView.findViewById(R.id.tvNoCompetitionWinner);
             tvName.setText("" + competition.getName());
             String date = Utility.formatDateToString(competition.getFromDate().getTime());
             if (competition.getToDate() != null) {
@@ -393,9 +396,10 @@ public class FragmentCompetitionWinner extends Fragment {
             }
             tvDate.setText("" + date);
             final View finalConvertView = convertView;
-            ImageView ivProfilePic = finalConvertView
-                    .findViewById(R.id.ivProfilePic);
-
+            ImageView ivProfilePic = finalConvertView.findViewById(R.id.ivProfilePic);
+            if(this._listDataChild.get(this._listDataHeader.get(groupPosition)).size() == 0){
+                tvNoCompetitionWinner.setVisibility(View.VISIBLE);
+            }
             return convertView;
         }
 
