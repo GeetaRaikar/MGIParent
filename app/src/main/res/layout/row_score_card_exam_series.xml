@@ -63,7 +63,8 @@ android:orientation="horizontal">
             android:id="@+id/tvStatus"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textColor="@color/colorPrimary"/>
+            android:textColor="@color/colorOrange"
+            android:visibility="gone"/>
         <com.github.mikephil.charting.charts.BarChart
                 android:id="@+id/chartSubjectWiseScore"
                 android:layout_width="match_parent"

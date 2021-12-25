@@ -6,9 +6,11 @@ import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.bumptech.glide.Glide;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.material.card.MaterialCardView;
@@ -29,6 +31,7 @@ public class FragmentAboutUs extends Fragment {
     private View view;
     private TextView tvName, tvDesc, tvYear, tvAddress1, tvAddress2, tvAddress3, tvContact1;
     private TextView tvContact2, tvEmail, tvMission, tvVision, tvMissionLbl, tvVisionLbl;
+    private ImageView ivLogo;
     private LinearLayout llEstablishedYear;
     private MaterialCardView cvAddress, cvContact, cvMission;
     private FirebaseFirestore db = FirebaseFirestore.getInstance();
@@ -74,6 +77,7 @@ public class FragmentAboutUs extends Fragment {
         tvVision = view.findViewById(R.id.tvVision);
         tvMissionLbl = view.findViewById(R.id.tvMissionLbl);
         tvVisionLbl = view.findViewById(R.id.tvVisionLbl);
+        ivLogo = view.findViewById(R.id.ivLogo);
 
         if(pDialog == null && !pDialog.isShowing()){
             pDialog.show();
@@ -91,6 +95,13 @@ public class FragmentAboutUs extends Fragment {
                             institute = documentSnapshot.toObject(Institute.class);
                             //System.out.println("school - "+school);
                             if (institute != null) {
+                                if(institute.getLogoImagePath() != null){
+                                    Glide.with(getContext())
+                                            .load(institute.getLogoImagePath())
+                                            .fitCenter()
+                                            .placeholder(R.drawable.mgi_logo)
+                                            .into(ivLogo);
+                                }
                                 tvName.setText("" + institute.getName());
                                 if (!TextUtils.isEmpty(institute.getAboutInstitute())) {
                                     tvDesc.setText("" + institute.getAboutInstitute());
@@ -99,8 +110,8 @@ public class FragmentAboutUs extends Fragment {
                                 if (!(address.isEmpty())) {
                                     cvAddress.setVisibility(View.VISIBLE);
                                     tvAddress1.setText("" + address);
-                                    tvAddress2.setText("");
-                                    tvAddress3.setText("");
+                                    tvAddress2.setVisibility(View.GONE);
+                                    tvAddress3.setVisibility(View.GONE);
                                 }
                                 if(TextUtils.isEmpty(institute.getPrimaryContactNumber())
                                         && TextUtils.isEmpty(institute.getSecondaryContactNumber())

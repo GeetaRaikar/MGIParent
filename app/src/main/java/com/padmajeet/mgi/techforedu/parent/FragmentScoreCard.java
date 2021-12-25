@@ -394,6 +394,10 @@ public class FragmentScoreCard extends Fragment {
                     filterExamList.add(exam);
                 }
             }
+            if(filterExamList.size() == 0){
+                holder.tvStatus.setText("Note : Exams are not yet declared.");
+                holder.tvStatus.setVisibility(View.VISIBLE);
+            }
             List<ScoreDetails> filteredScoreDetailsList = new ArrayList<>();
             for(ScoreCard scoreCard:scoreCardList){
                 for(Exam exam:filterExamList){
@@ -408,6 +412,12 @@ public class FragmentScoreCard extends Fragment {
                         scoreDetails.setResult(scoreCard.getResult());
                         filteredScoreDetailsList.add(scoreDetails);
                     }
+                }
+            }
+            if(filterExamList.size() != 0){
+                if(filteredScoreDetailsList.size() == 0) {
+                    holder.tvStatus.setText("Note : Scorecards are not yet declared.");
+                    holder.tvStatus.setVisibility(View.VISIBLE);
                 }
             }
             // Chart settings

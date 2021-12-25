@@ -267,10 +267,21 @@ public class FragmentExamSeries extends Fragment {
                 }
                 holder.tvESDate.setText("" + date);
                 if (examSeries.getToDate().getTime() > new Date().getTime()) {
-                    holder.tvStatus.setVisibility(View.GONE);
+                    //holder.tvStatus.setVisibility(View.GONE);
                 } else {
                     holder.tvStatus.setVisibility(View.VISIBLE);
                 }
+            }
+            List<Exam> examForExamSeries = new ArrayList<>();
+            for (Exam exam:examList){
+                if(examSeries.getId().equals(exam.getExamSeriesId())) {
+                    examForExamSeries.add(exam);
+                }
+            }
+            if(examForExamSeries.size() == 0){
+                holder.tvStatus.setText("Note : Exams are not yet declared.");
+                holder.tvStatus.setVisibility(View.VISIBLE);
+                holder.tvDetails.setVisibility(View.GONE);
             }
             holder.tvDetails.setOnClickListener(new View.OnClickListener() {
                 @Override
