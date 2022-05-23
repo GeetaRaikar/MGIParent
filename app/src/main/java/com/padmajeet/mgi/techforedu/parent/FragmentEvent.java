@@ -131,7 +131,7 @@ public class FragmentEvent extends Fragment {
             }
             eventListener = eventCollectionRef
                     .whereEqualTo("academicYearId", academicYearId)
-                    .whereEqualTo("recipientType", "P")
+                    .whereEqualTo("recipientType", "S")
                     .orderBy("fromDate", Query.Direction.DESCENDING)
                     .orderBy("toDate", Query.Direction.DESCENDING)
                     .addSnapshotListener(new EventListener<QuerySnapshot>() {
